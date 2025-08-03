@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/flaviodelgrosso/fastify-mcp-server/compare/v0.4.0...v0.4.1) (2025-08-03)
+
+
+### Bug Fixes
+
+* **sec:** change bearer check on onRequest lifecycle instead of preHandler ([#20](https://github.com/flaviodelgrosso/fastify-mcp-server/issues/20)) ([20b906f](https://github.com/flaviodelgrosso/fastify-mcp-server/commit/20b906f47d68512f6f767fdb97a35b0ad81a892b))
+
 ## [0.4.0](https://github.com/flaviodelgrosso/fastify-mcp-server/compare/v0.3.0...v0.4.0) (2025-06-20)
 
 
