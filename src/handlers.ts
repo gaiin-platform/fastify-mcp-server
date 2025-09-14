@@ -46,7 +46,8 @@ export class PostRequestHandler implements McpRequestHandler {
     }
 
     // No sessionId, but is an initialize request: create new session
-    const transport = await this.sessionManager.createSession();
+    const bearerToken = (request.raw as any).bearerToken; // Get the bearer token from request
+    const transport = await this.sessionManager.createSession(bearerToken);
     await transport.handleRequest(request.raw, reply.raw, request.body);
   }
 }
@@ -96,6 +97,6 @@ export class DeleteRequestHandler implements McpRequestHandler {
     await transport.handleRequest(request.raw, reply.raw, request.body);
 
     // Manually clean up session as SDK doesn't always trigger onclose
-    this.sessionManager.destroySession(sessionId);
+    await this.sessionManager.destroySession(sessionId);
   }
 }

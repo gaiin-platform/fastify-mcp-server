@@ -14,7 +14,8 @@ export function addBearerPreHandlerHook (app: FastifyInstance, options: BearerAu
   app.addHook('onRequest', async (req, reply) => {
     try {
       const authInfo = await getAuthInfo(req, verifier, requiredScopes);
-      Object.assign(req.raw, { auth: authInfo }); // Ensure raw request also has auth info
+      const token = extractBearerToken(req.headers.authorization);
+      Object.assign(req.raw, { auth: authInfo, bearerToken: token }); // Store both auth info and raw token
     } catch (error) {
       sendAuthError(error, reply, resourceMetadataUrl);
     }

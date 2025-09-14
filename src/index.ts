@@ -4,6 +4,10 @@ import fp from 'fastify-plugin';
 import { FastifyMcpServer } from './server.ts';
 import type { FastifyMcpServerOptions } from './types.ts';
 
+// Re-export the bearer token provider types
+export { BearerTokenProvider, TokenBasedServerProvider } from './bearer-provider.js';
+export type { FastifyMcpServerOptions } from './types.js';
+
 declare module 'fastify' {
   interface FastifyInstance {
     /**

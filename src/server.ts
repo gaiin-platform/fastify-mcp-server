@@ -19,8 +19,9 @@ export class FastifyMcpServer {
     this.fastify = app;
     this.options = options;
 
-    // Initialize session manager
-    this.sessionManager = new SessionManager(options.server);
+    // Initialize session manager with appropriate configuration
+    const bearerTokenProvider = options.authorization?.bearerTokenProvider;
+    this.sessionManager = new SessionManager(options.server, bearerTokenProvider);
 
     // Register OAuth metadata routes if oauth2 config is provided
     this.fastify.register(wellKnownRoutes, { config: options.authorization?.oauth2 });
@@ -53,8 +54,10 @@ export class FastifyMcpServer {
    * Graceful shutdown - closes all sessions
    */
   public async shutdown (): Promise<void> {
-    this.sessionManager.destroyAllSessions();
-    await this.options.server.close();
+    await this.sessionManager.destroyAllSessions();
+    if (this.options.server) {
+      await this.options.server.close();
+    }
   }
 
   private get endpoint (): string {
