@@ -179,6 +179,87 @@ await prod.start();
 - **Environment flexible** - Works for dev, test, staging, production
 - **Integration friendly** - Event-driven architecture for easy integration
 
+## 🎪 Enhanced Event System
+
+The interface provides **dual-level event tracking** for comprehensive monitoring:
+
+### **Token Events (Basic Operations)**
+```typescript
+server.on('tokenAdded', (token) => console.log(`➕ Token: ${token}`));
+server.on('tokenRemoved', (token) => console.log(`➖ Token: ${token}`));
+server.on('tokenUpdated', (token) => console.log(`🔄 Token: ${token}`));
+```
+
+### **Server Events (Detailed Tracking) - NEW!**
+```typescript
+// When a new MCP server is created for a token
+server.on('serverRegistered', (info) => {
+  console.log(`📦 Server: ${info.serverName} v${info.serverVersion}`);
+  console.log(`   Token: ${info.token}`);
+  console.log(`   Registered: ${info.registeredAt}`);
+});
+
+// When an MCP server is removed (with cleanup info)
+server.on('serverRemoved', (info) => {
+  console.log(`🗑️ Server: ${info.serverName} removed`);
+  console.log(`   Token: ${info.token}`);
+  console.log(`   Had active sessions: ${info.hadActiveSessions ? 'YES' : 'NO'}`);
+  console.log(`   Removed: ${info.removedAt}`);
+});
+
+// When an MCP server is updated (plan upgrades, etc.)
+server.on('serverUpdated', (info) => {
+  console.log(`🔄 Server upgrade for token: ${info.token}`);
+  console.log(`   ${info.oldServerName} → ${info.newServerName}`);
+  console.log(`   Updated: ${info.updatedAt}`);
+});
+```
+
+### **Use Cases for Server Events**
+
+1. **Production Monitoring**
+   ```typescript
+   server.on('serverRegistered', (info) => {
+     metrics.gauge('mcp_servers_registered', server.getStats().registeredTokens);
+     logger.info('New MCP server deployed', info);
+   });
+   ```
+
+2. **Customer Notifications**
+   ```typescript
+   server.on('serverRegistered', (info) => {
+     notifyCustomer(info.token, `Your ${info.serverName} is now active!`);
+   });
+
+   server.on('serverUpdated', (info) => {
+     notifyCustomer(info.token, 'Your plan has been upgraded!');
+   });
+   ```
+
+3. **Billing & Analytics**
+   ```typescript
+   server.on('serverRegistered', (info) => {
+     billing.startMeteringForCustomer(info.token, info.serverName);
+   });
+
+   server.on('serverRemoved', (info) => {
+     if (info.hadActiveSessions) {
+       analytics.recordChurnWithActiveUsage(info.token);
+     }
+   });
+   ```
+
+4. **Audit & Compliance**
+   ```typescript
+   server.on('serverUpdated', (info) => {
+     audit.logConfigurationChange({
+       token: info.token,
+       change: `${info.oldServerName} → ${info.newServerName}`,
+       timestamp: info.updatedAt
+     });
+   });
+   ```
+
 ## 🔧 Implementation Status
 
 - ✅ **Interface designed** - Complete TypeScript interface defined
