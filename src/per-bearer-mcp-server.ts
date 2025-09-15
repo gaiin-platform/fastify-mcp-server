@@ -48,6 +48,27 @@ export interface ToolCallInfo {
   calledAt: Date;
 }
 
+export interface ServerRegistrationInfo {
+  token: string;
+  serverName: string;
+  serverVersion: string;
+  registeredAt: Date;
+}
+
+export interface ServerRemovalInfo {
+  token: string;
+  serverName: string;
+  removedAt: Date;
+  hadActiveSessions: boolean;
+}
+
+export interface ServerUpdateInfo {
+  token: string;
+  oldServerName: string;
+  newServerName: string;
+  updatedAt: Date;
+}
+
 /**
  * Events emitted by the PerBearerMcpServer
  */
@@ -62,12 +83,18 @@ export interface PerBearerMcpServerEvents {
   sessionDestroyed: [SessionInfo];
   /** Tool was called */
   toolCalled: [ToolCallInfo];
-  /** Token was added */
+  /** Token was added (basic event) */
   tokenAdded: [string];
-  /** Token was removed */
+  /** Token was removed (basic event) */
   tokenRemoved: [string];
-  /** Token was updated */
+  /** Token was updated (basic event) */
   tokenUpdated: [string];
+  /** MCP Server registered for a token (detailed event) */
+  serverRegistered: [ServerRegistrationInfo];
+  /** MCP Server removed for a token (detailed event) */
+  serverRemoved: [ServerRemovalInfo];
+  /** MCP Server updated for a token (detailed event) */
+  serverUpdated: [ServerUpdateInfo];
   /** Transport error occurred */
   transportError: [string, Error];
 }
@@ -101,6 +128,15 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   addToken(token: string, serverFactory: ServerFactory): this {
     const wrappedFactory = async () => {
       const server = await serverFactory();
+      
+      // Emit detailed server registration event
+      this.emit('serverRegistered', {
+        token,
+        serverName: server.name || 'unnamed-server',
+        serverVersion: server.version || '1.0.0',
+        registeredAt: new Date()
+      });
+      
       return server;
     };
     
@@ -113,8 +149,20 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
    * Remove a bearer token
    */
   removeToken(token: string): this {
+    // Check if there are active sessions for this token before removal
+    const sessionsForToken = Array.from(this.activeSessions.values())
+      .filter(session => session.token === token);
+    
     const removed = this.tokenProvider.removeToken(token);
     if (removed) {
+      // Emit detailed server removal event
+      this.emit('serverRemoved', {
+        token,
+        serverName: 'unknown-server', // TODO: Track server names
+        removedAt: new Date(),
+        hadActiveSessions: sessionsForToken.length > 0
+      });
+      
       this.emit('tokenRemoved', token);
     }
     return this;
@@ -126,6 +174,15 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   updateToken(token: string, serverFactory: ServerFactory): this {
     const wrappedFactory = async () => {
       const server = await serverFactory();
+      
+      // Emit detailed server update event
+      this.emit('serverUpdated', {
+        token,
+        oldServerName: 'unknown-old-server', // TODO: Track previous server name
+        newServerName: server.name || 'unnamed-server',
+        updatedAt: new Date()
+      });
+      
       return server;
     };
     

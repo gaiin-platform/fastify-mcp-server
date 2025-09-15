@@ -33,7 +33,7 @@ async function basicExample() {
       return mcpServer;
     });
 
-  // Listen for events
+  // Listen for events - both token and server events
   server.on('started', (info) => {
     console.log(`🚀 Server started at ${info.url}`);
     console.log(`📱 Use these bearer tokens: ${server.getTokens().join(', ')}`);
@@ -41,6 +41,19 @@ async function basicExample() {
 
   server.on('sessionCreated', (session) => {
     console.log(`👤 New session: ${session.sessionId} (token: ${session.token})`);
+  });
+
+  // Server lifecycle events (NEW!)
+  server.on('serverRegistered', (info) => {
+    console.log(`📦 Server registered: ${info.serverName} v${info.serverVersion} for token '${info.token}'`);
+  });
+
+  server.on('serverRemoved', (info) => {
+    console.log(`🗑️ Server removed: ${info.serverName} for token '${info.token}' (had ${info.hadActiveSessions ? 'active' : 'no'} sessions)`);
+  });
+
+  server.on('serverUpdated', (info) => {
+    console.log(`🔄 Server updated: ${info.oldServerName} → ${info.newServerName} for token '${info.token}'`);
   });
 
   // Start server
