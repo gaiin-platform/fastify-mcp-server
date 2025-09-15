@@ -130,10 +130,12 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
       const server = await serverFactory();
       
       // Emit detailed server registration event
+      // Extract server info safely
+      const serverInfo = (server as any).serverInfo || {};
       this.emit('serverRegistered', {
         token,
-        serverName: server.name || 'unnamed-server',
-        serverVersion: server.version || '1.0.0',
+        serverName: serverInfo.name || 'unnamed-server',
+        serverVersion: serverInfo.version || '1.0.0',
         registeredAt: new Date()
       });
       
@@ -176,10 +178,11 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
       const server = await serverFactory();
       
       // Emit detailed server update event
+      const serverInfo = (server as any).serverInfo || {};
       this.emit('serverUpdated', {
         token,
         oldServerName: 'unknown-old-server', // TODO: Track previous server name
-        newServerName: server.name || 'unnamed-server',
+        newServerName: serverInfo.name || 'unnamed-server',
         updatedAt: new Date()
       });
       
