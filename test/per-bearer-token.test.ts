@@ -1,7 +1,8 @@
 import { strictEqual, deepStrictEqual, ok, throws } from 'node:assert';
 import { afterEach, beforeEach, describe, mock, test } from 'node:test';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { TokenBasedServerProvider } from '../src/bearer-provider.ts';
 import { SessionManager } from '../src/session-manager.ts';
@@ -24,8 +25,8 @@ describe('Per-Bearer Token Functionality', () => {
 
     // Create token provider with initial tokens
     tokenProvider = new TokenBasedServerProvider({
-      'token1': mockServerFactory1,
-      'token2': mockServerFactory2
+      token1: mockServerFactory1,
+      token2: mockServerFactory2
     });
   });
 
@@ -36,7 +37,7 @@ describe('Per-Bearer Token Functionality', () => {
   describe('TokenBasedServerProvider', () => {
     test('should verify valid tokens', async () => {
       const authInfo = await tokenProvider.verifyAccessToken('token1');
-      
+
       deepStrictEqual(authInfo, {
         token: 'token1',
         clientId: 'client-token1',
@@ -59,7 +60,7 @@ describe('Per-Bearer Token Functionality', () => {
       };
 
       const server = await tokenProvider.createServerForToken('token1', authInfo);
-      
+
       strictEqual(server, mockServer1);
       strictEqual(mockServerFactory1.mock.callCount(), 1);
     });
@@ -99,17 +100,21 @@ describe('Per-Bearer Token Functionality', () => {
   describe('Runtime Token Management', () => {
     test('should add new token at runtime', () => {
       const newFactory = mock.fn(async () => mockServer1);
-      
+
       tokenProvider.addToken('new-token', newFactory);
-      
+
       ok(tokenProvider.hasToken('new-token'));
       strictEqual(tokenProvider.getTokenCount(), 3); // original 2 + 1 new
-      deepStrictEqual(tokenProvider.getRegisteredTokens(), ['token1', 'token2', 'new-token']);
+      deepStrictEqual(tokenProvider.getRegisteredTokens(), [
+        'token1',
+        'token2',
+        'new-token'
+      ]);
     });
 
     test('should remove existing token', () => {
       const removed = tokenProvider.removeToken('token1');
-      
+
       strictEqual(removed, true);
       strictEqual(tokenProvider.hasToken('token1'), false);
       strictEqual(tokenProvider.getTokenCount(), 1);
@@ -118,16 +123,16 @@ describe('Per-Bearer Token Functionality', () => {
 
     test('should return false when removing non-existent token', () => {
       const removed = tokenProvider.removeToken('nonexistent');
-      
+
       strictEqual(removed, false);
       strictEqual(tokenProvider.getTokenCount(), 2); // unchanged
     });
 
     test('should update existing token factory', () => {
       const newFactory = mock.fn(async () => mockServer2);
-      
+
       const updated = tokenProvider.updateToken('token1', newFactory);
-      
+
       strictEqual(updated, true);
       strictEqual(tokenProvider.getTokenCount(), 2); // count unchanged
       deepStrictEqual(tokenProvider.getRegisteredTokens(), ['token1', 'token2']);
@@ -135,15 +140,15 @@ describe('Per-Bearer Token Functionality', () => {
 
     test('should return false when updating non-existent token', () => {
       const newFactory = mock.fn(async () => mockServer1);
-      
+
       const updated = tokenProvider.updateToken('nonexistent', newFactory);
-      
+
       strictEqual(updated, false);
     });
 
     test('should clear all tokens', () => {
       tokenProvider.clearAllTokens();
-      
+
       strictEqual(tokenProvider.getTokenCount(), 0);
       deepStrictEqual(tokenProvider.getRegisteredTokens(), []);
       strictEqual(tokenProvider.hasToken('token1'), false);
@@ -152,12 +157,16 @@ describe('Per-Bearer Token Functionality', () => {
 
     test('should provide accurate statistics', () => {
       tokenProvider.addToken('new-token', mockServerFactory1);
-      
+
       const stats = tokenProvider.getStats();
-      
+
       strictEqual(stats.registeredTokens, 3);
       strictEqual(stats.activeServers, 0); // No servers created yet
-      deepStrictEqual(stats.tokens, ['token1', 'token2', 'new-token']);
+      deepStrictEqual(stats.tokens, [
+        'token1',
+        'token2',
+        'new-token'
+      ]);
     });
 
     test('should update active server count after creation', async () => {
@@ -169,7 +178,7 @@ describe('Per-Bearer Token Functionality', () => {
 
       // Create a server
       await tokenProvider.createServerForToken('token1', authInfo);
-      
+
       const stats = tokenProvider.getStats();
       strictEqual(stats.activeServers, 1);
     });
@@ -184,7 +193,7 @@ describe('Per-Bearer Token Functionality', () => {
 
     test('should create session with bearer token', async () => {
       const transport = await sessionManager.createSession('token1');
-      
+
       ok(transport);
       strictEqual(mockServerFactory1.mock.callCount(), 1);
     });
@@ -199,9 +208,9 @@ describe('Per-Bearer Token Functionality', () => {
     test('should create session without token when default server provided', async () => {
       const defaultServer = new McpServer({ name: 'default', version: '1.0.0' });
       const sessionManagerWithDefault = new SessionManager(defaultServer.server, tokenProvider);
-      
+
       const transport = await sessionManagerWithDefault.createSession();
-      
+
       ok(transport);
       // Should use default server, not call token factories
       strictEqual(mockServerFactory1.mock.callCount(), 0);
@@ -312,7 +321,7 @@ describe('Per-Bearer Token Functionality', () => {
   describe('Memory Management', () => {
     test('should clean up cached servers when token removed', async () => {
       const authInfo: AuthInfo = { token: 'token1', clientId: 'client1', scopes: [] };
-      
+
       // Create server (gets cached)
       await tokenProvider.createServerForToken('token1', authInfo);
       strictEqual(tokenProvider.getStats().activeServers, 1);
@@ -324,7 +333,7 @@ describe('Per-Bearer Token Functionality', () => {
 
     test('should clean up cached servers when token updated', async () => {
       const authInfo: AuthInfo = { token: 'token1', clientId: 'client1', scopes: [] };
-      
+
       // Create server (gets cached)
       await tokenProvider.createServerForToken('token1', authInfo);
       strictEqual(tokenProvider.getStats().activeServers, 1);
@@ -337,7 +346,7 @@ describe('Per-Bearer Token Functionality', () => {
     test('should clean up all servers when cleared', async () => {
       const authInfo1: AuthInfo = { token: 'token1', clientId: 'client1', scopes: [] };
       const authInfo2: AuthInfo = { token: 'token2', clientId: 'client2', scopes: [] };
-      
+
       // Create multiple servers
       await tokenProvider.createServerForToken('token1', authInfo1);
       await tokenProvider.createServerForToken('token2', authInfo2);

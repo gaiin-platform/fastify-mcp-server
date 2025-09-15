@@ -1,12 +1,20 @@
-import type { FastifyInstance } from 'fastify';
-import Fastify from 'fastify';
 import { EventEmitter } from 'node:events';
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import closeWithGrace from 'close-with-grace';
+import Fastify from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 import FastifyMcpStreamableHttp, { getMcpDecorator, TokenBasedServerProvider } from './index.ts';
 
 export type ServerFactory = () => Promise<Server> | Server;
+
+// Factory that returns server with metadata
+export type ServerWithMetadata = {
+  server: Server;
+  name?: string;
+  version?: string;
+};
 
 export interface PerBearerMcpServerOptions {
   /** Port to bind to. Use 0 for dynamic port selection */
@@ -109,7 +117,7 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   private serverInfo?: ServerInfo;
   private activeSessions = new Map<string, SessionInfo>();
 
-  constructor(options: PerBearerMcpServerOptions = {}) {
+  constructor (options: PerBearerMcpServerOptions = {}) {
     super();
     this.options = {
       port: 0, // Dynamic port by default
@@ -125,23 +133,51 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   /**
    * Add a bearer token with its associated server factory
    */
-  addToken(token: string, serverFactory: ServerFactory): this {
+  addToken (token: string, serverFactory: ServerFactory): this {
     const wrappedFactory = async () => {
-      const server = await serverFactory();
-      
-      // Emit detailed server registration event
-      // Extract server info safely
-      const serverInfo = (server as any).serverInfo || {};
+      const result = await serverFactory();
+
+      // Handle both Server instances and ServerWithMetadata objects
+      let server: Server;
+      let serverName = 'unnamed-server';
+      let serverVersion = '1.0.0';
+
+      if (result && typeof result === 'object' && 'server' in result) {
+        // This is a ServerWithMetadata object
+        const metadata = result as unknown as ServerWithMetadata;
+        server = metadata.server;
+        serverName = metadata.name || serverName;
+        serverVersion = metadata.version || serverVersion;
+      } else {
+        // This is a direct Server instance
+        server = result as Server;
+
+        // Try to extract metadata from the server instance
+        // This is a best-effort approach since the SDK doesn't guarantee these properties
+        const anyServer = server as any;
+        serverName = anyServer.serverInfo?.name ||
+          anyServer.options?.name ||
+          anyServer._options?.name ||
+          anyServer.name ||
+          serverName;
+
+        serverVersion = anyServer.serverInfo?.version ||
+          anyServer.options?.version ||
+          anyServer._options?.version ||
+          anyServer.version ||
+          serverVersion;
+      }
+
       this.emit('serverRegistered', {
         token,
-        serverName: serverInfo.name || 'unnamed-server',
-        serverVersion: serverInfo.version || '1.0.0',
+        serverName,
+        serverVersion,
         registeredAt: new Date()
       });
-      
+
       return server;
     };
-    
+
     this.tokenProvider.addToken(token, wrappedFactory);
     this.emit('tokenAdded', token);
     return this;
@@ -150,11 +186,11 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   /**
    * Remove a bearer token
    */
-  removeToken(token: string): this {
+  removeToken (token: string): this {
     // Check if there are active sessions for this token before removal
     const sessionsForToken = Array.from(this.activeSessions.values())
-      .filter(session => session.token === token);
-    
+      .filter((session) => session.token === token);
+
     const removed = this.tokenProvider.removeToken(token);
     if (removed) {
       // Emit detailed server removal event
@@ -164,7 +200,7 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
         removedAt: new Date(),
         hadActiveSessions: sessionsForToken.length > 0
       });
-      
+
       this.emit('tokenRemoved', token);
     }
     return this;
@@ -173,10 +209,10 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   /**
    * Update an existing token's server factory
    */
-  updateToken(token: string, serverFactory: ServerFactory): this {
+  updateToken (token: string, serverFactory: ServerFactory): this {
     const wrappedFactory = async () => {
       const server = await serverFactory();
-      
+
       // Emit detailed server update event
       const serverInfo = (server as any).serverInfo || {};
       this.emit('serverUpdated', {
@@ -185,10 +221,10 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
         newServerName: serverInfo.name || 'unnamed-server',
         updatedAt: new Date()
       });
-      
+
       return server;
     };
-    
+
     const updated = this.tokenProvider.updateToken(token, wrappedFactory);
     if (updated) {
       this.emit('tokenUpdated', token);
@@ -199,21 +235,21 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   /**
    * Check if a token exists
    */
-  hasToken(token: string): boolean {
+  hasToken (token: string): boolean {
     return this.tokenProvider.hasToken(token);
   }
 
   /**
    * Get all registered tokens
    */
-  getTokens(): string[] {
+  getTokens (): string[] {
     return this.tokenProvider.getRegisteredTokens();
   }
 
   /**
    * Get token management statistics
    */
-  getStats() {
+  getStats () {
     return {
       ...this.tokenProvider.getStats(),
       activeSessions: this.activeSessions.size,
@@ -224,22 +260,24 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   /**
    * Start the server
    */
-  async start(): Promise<ServerInfo> {
+  async start (): Promise<ServerInfo> {
     if (this.app) {
       throw new Error('Server is already running');
     }
 
     // Create Fastify app
     this.app = Fastify({
-      logger: this.options.logging ? {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            translateTime: 'HH:MM:ss Z',
-            ignore: 'pid,hostname'
+      logger: this.options.logging
+        ? {
+            transport: {
+              target: 'pino-pretty',
+              options: {
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname'
+              }
+            }
           }
-        }
-      } : false
+        : false
     });
 
     // Register MCP plugin
@@ -303,7 +341,7 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
   /**
    * Stop the server
    */
-  async stop(): Promise<void> {
+  async stop (): Promise<void> {
     if (!this.app) {
       throw new Error('Server is not running');
     }
@@ -311,36 +349,36 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
     const mcpDecorator = getMcpDecorator(this.app);
     await mcpDecorator.shutdown();
     await this.app.close();
-    
+
     this.app = undefined;
     this.serverInfo = undefined;
     this.activeSessions.clear();
-    
+
     this.emit('stopped');
   }
 
   /**
    * Get server information (only available when running)
    */
-  getServerInfo(): ServerInfo | null {
+  getServerInfo (): ServerInfo | null {
     return this.serverInfo || null;
   }
 
   /**
    * Check if server is running
    */
-  isRunning(): boolean {
+  isRunning (): boolean {
     return !!this.app;
   }
 
   /**
    * Get active sessions
    */
-  getActiveSessions(): SessionInfo[] {
+  getActiveSessions (): SessionInfo[] {
     return Array.from(this.activeSessions.values());
   }
 
-  private setupEventListeners(): void {
+  private setupEventListeners (): void {
     if (!this.app) return;
 
     const sessionManager = getMcpDecorator(this.app).getSessionManager();
@@ -354,7 +392,7 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
         serverName: 'unknown', // TODO: Extract from session
         createdAt: new Date()
       };
-      
+
       this.activeSessions.set(sessionId, sessionInfo);
       this.emit('sessionCreated', sessionInfo);
     });
@@ -372,12 +410,12 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
     });
   }
 
-  private setupGracefulShutdown(): void {
+  private setupGracefulShutdown (): void {
     closeWithGrace(async ({ signal, err }) => {
       if (err) {
         console.error('Server closing with error:', err);
       }
-      
+
       if (this.isRunning()) {
         await this.stop();
       }
@@ -388,6 +426,6 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
 /**
  * Helper function to create server instances quickly
  */
-export function createPerBearerMcpServer(options?: PerBearerMcpServerOptions): PerBearerMcpServer {
+export function createPerBearerMcpServer (options?: PerBearerMcpServerOptions): PerBearerMcpServer {
   return new PerBearerMcpServer(options);
 }

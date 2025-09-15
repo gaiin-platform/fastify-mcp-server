@@ -6,6 +6,9 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
+// Import the current working system
+import { TokenBasedServerProvider } from '../dist/index.js';
+
 // This would be the interface (for demo purposes, using the working version)
 // import { createPerBearerMcpServer } from '../src/per-bearer-mcp-server.js';
 
@@ -200,41 +203,38 @@ console.log(`
 // For now, let's create a simple working demo using the existing system
 console.log('\n🔧 Creating a working demo using current implementation...\n');
 
-// Import the current working system
-import { TokenBasedServerProvider } from '../dist/index.js';
-
 // Simple wrapper demo to show the concept
 class SimpleDemo {
-  constructor() {
+  constructor () {
     this.provider = new TokenBasedServerProvider();
     this.tokens = [];
   }
 
-  addToken(token, factory) {
+  addToken (token, factory) {
     this.provider.addToken(token, factory);
     this.tokens.push(token);
     console.log(`✅ Added token: ${token}`);
     return this;
   }
 
-  removeToken(token) {
+  removeToken (token) {
     const removed = this.provider.removeToken(token);
     if (removed) {
-      this.tokens = this.tokens.filter(t => t !== token);
+      this.tokens = this.tokens.filter((t) => t !== token);
       console.log(`❌ Removed token: ${token}`);
     }
     return this;
   }
 
-  getTokens() {
+  getTokens () {
     return [...this.tokens];
   }
 
-  getStats() {
+  getStats () {
     return this.provider.getStats();
   }
 
-  hasToken(token) {
+  hasToken (token) {
     return this.provider.hasToken(token);
   }
 }

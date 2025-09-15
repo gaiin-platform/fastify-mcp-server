@@ -21,7 +21,8 @@ export interface BearerTokenProvider {
  */
 export class TokenBasedServerProvider implements BearerTokenProvider {
   private tokenToServerFactory: Map<string, () => Promise<Server>>;
-  private activeServers: Map<string, Server> = new Map(); // Cache for created servers
+  private activeServers: Map<string, Server> = new Map();
+  private serverMetadata: Map<string, { name?: string; version?: string }> = new Map(); // Cache for created servers
 
   constructor (tokenMappings: Record<string, () => Promise<Server>> = {}) {
     this.tokenToServerFactory = new Map(Object.entries(tokenMappings));

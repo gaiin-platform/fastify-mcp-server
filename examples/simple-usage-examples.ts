@@ -3,13 +3,14 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
 import { createPerBearerMcpServer } from '../src/per-bearer-mcp-server.ts';
 
 // ============================================================================
 // EXAMPLE 1: Basic Usage - Quick Start
 // ============================================================================
 
-async function basicExample() {
+async function basicExample () {
   // Create and configure server
   const server = createPerBearerMcpServer({
     port: 0, // Dynamic port
@@ -69,37 +70,37 @@ async function basicExample() {
 
 class CustomerMcpService {
   private server = createPerBearerMcpServer({ port: 9090 });
-  private customers = new Map<string, { name: string, plan: string }>();
+  private customers = new Map<string, { name: string; plan: string }>();
 
-  constructor() {
+  constructor () {
     this.setupEventHandlers();
   }
 
-  async start() {
+  async start () {
     const info = await this.server.start();
     console.log(`Customer MCP service running on ${info.url}`);
     return info;
   }
 
-  async stop() {
+  async stop () {
     await this.server.stop();
   }
 
   // Add a new customer with their API token
-  async addCustomer(customerId: string, customerName: string, plan: 'basic' | 'premium') {
+  async addCustomer (customerId: string, customerName: string, plan: 'basic' | 'premium') {
     this.customers.set(customerId, { name: customerName, plan });
-    
+
     const apiToken = `customer-${customerId}-token`;
     const serverFactory = () => this.createCustomerServer(customerName, plan);
-    
+
     this.server.addToken(apiToken, serverFactory);
-    
+
     console.log(`✅ Added customer: ${customerName} (${plan} plan)`);
     return { apiToken, plan };
   }
 
   // Remove customer access
-  removeCustomer(customerId: string) {
+  removeCustomer (customerId: string) {
     const apiToken = `customer-${customerId}-token`;
     this.server.removeToken(apiToken);
     this.customers.delete(customerId);
@@ -107,22 +108,22 @@ class CustomerMcpService {
   }
 
   // Upgrade customer plan
-  upgradeCustomer(customerId: string, newPlan: 'basic' | 'premium') {
+  upgradeCustomer (customerId: string, newPlan: 'basic' | 'premium') {
     const customer = this.customers.get(customerId);
     if (!customer) throw new Error('Customer not found');
-    
+
     customer.plan = newPlan;
     const apiToken = `customer-${customerId}-token`;
     const serverFactory = () => this.createCustomerServer(customer.name, newPlan);
-    
+
     this.server.updateToken(apiToken, serverFactory);
     console.log(`⬆️ Upgraded ${customer.name} to ${newPlan} plan`);
   }
 
-  private createCustomerServer(customerName: string, plan: string) {
-    const server = new McpServer({ 
-      name: `${customerName}-server`, 
-      version: '1.0.0' 
+  private createCustomerServer (customerName: string, plan: string) {
+    const server = new McpServer({
+      name: `${customerName}-server`,
+      version: '1.0.0'
     });
 
     // Basic tools for all plans
@@ -139,7 +140,7 @@ class CustomerMcpService {
       server.tool('analytics', 'Get analytics data', {}, () => ({
         content: [{ type: 'text', text: 'Advanced analytics data...' }]
       }));
-      
+
       server.tool('export_data', 'Export customer data', {}, () => ({
         content: [{ type: 'text', text: 'Exporting your data...' }]
       }));
@@ -148,7 +149,7 @@ class CustomerMcpService {
     return server;
   }
 
-  private setupEventHandlers() {
+  private setupEventHandlers () {
     this.server.on('sessionCreated', (session) => {
       console.log(`📊 Session created for token: ${session.token}`);
     });
@@ -162,7 +163,7 @@ class CustomerMcpService {
     });
   }
 
-  getStats() {
+  getStats () {
     return {
       server: this.server.getStats(),
       customers: this.customers.size,
@@ -175,7 +176,7 @@ class CustomerMcpService {
 // EXAMPLE 3: Development/Testing Pattern
 // ============================================================================
 
-async function developmentExample() {
+async function developmentExample () {
   const server = createPerBearerMcpServer();
 
   // Add some test tokens
@@ -191,11 +192,10 @@ async function developmentExample() {
   server.on('sessionDestroyed', (s) => console.log('👋 Session ended:', s.sessionId));
   server.on('tokenAdded', (token) => console.log('➕ Token added:', token));
   server.on('tokenRemoved', (token) => console.log('➖ Token removed:', token));
-  server.on('transportError', (sessionId, error) => 
-    console.error('❌ Transport error:', sessionId, error.message));
+  server.on('transportError', (sessionId, error) => console.error('❌ Transport error:', sessionId, error.message));
 
   const info = await server.start();
-  
+
   // Simulate dynamic token management during development
   setTimeout(() => {
     console.log('\n🔄 Adding experimental token...');
@@ -211,7 +211,7 @@ async function developmentExample() {
 }
 
 // Helper server factories
-function createDevServer() {
+function createDevServer () {
   const server = new McpServer({ name: 'dev-server', version: '1.0.0' });
   server.tool('dev_info', 'Development info', {}, () => ({
     content: [{ type: 'text', text: 'Development environment active' }]
@@ -219,7 +219,7 @@ function createDevServer() {
   return server;
 }
 
-function createTestServer() {
+function createTestServer () {
   const server = new McpServer({ name: 'test-server', version: '1.0.0' });
   server.tool('run_test', 'Run tests', {}, () => ({
     content: [{ type: 'text', text: 'All tests passed ✅' }]
@@ -227,7 +227,7 @@ function createTestServer() {
   return server;
 }
 
-function createDebugServer() {
+function createDebugServer () {
   const server = new McpServer({ name: 'debug-server', version: '1.0.0' });
   server.tool('debug_info', 'Debug information', {}, () => ({
     content: [{ type: 'text', text: `Debug: ${JSON.stringify(process.memoryUsage())}` }]
@@ -235,7 +235,7 @@ function createDebugServer() {
   return server;
 }
 
-function createExperimentalServer() {
+function createExperimentalServer () {
   const server = new McpServer({ name: 'experimental-server', version: '0.1.0' });
   server.tool('experiment', 'Experimental feature', {}, () => ({
     content: [{ type: 'text', text: '🧪 Experimental feature activated!' }]
@@ -250,42 +250,41 @@ function createExperimentalServer() {
 export const usageExamples = {
   // Quick start for simple use cases
   quickStart: basicExample,
-  
+
   // SaaS application with customer management
   saasPattern: () => new CustomerMcpService(),
-  
+
   // Development and testing
   devPattern: developmentExample,
-  
+
   // One-liner for basic servers
-  oneLiner: () => 
-    createPerBearerMcpServer({ port: 9000 })
-      .addToken('simple', () => new McpServer({ name: 'simple', version: '1.0.0' })),
-  
+  oneLiner: () => createPerBearerMcpServer({ port: 9000 })
+    .addToken('simple', () => new McpServer({ name: 'simple', version: '1.0.0' })),
+
   // Production-ready with error handling
   production: async () => {
-    const server = createPerBearerMcpServer({ 
+    const server = createPerBearerMcpServer({
       port: process.env.PORT ? parseInt(process.env.PORT) : 0,
       logging: process.env.NODE_ENV !== 'production'
     });
-    
+
     // Add production tokens from environment or database
     const tokens = await loadTokensFromDatabase();
     tokens.forEach(({ token, serverFactory }) => {
       server.addToken(token, serverFactory);
     });
-    
+
     // Production error handling
     server.on('transportError', (sessionId, error) => {
       logger.error('MCP transport error', { sessionId, error });
     });
-    
+
     return server;
   }
 };
 
 // Mock function for production example
-async function loadTokensFromDatabase() {
+async function loadTokensFromDatabase () {
   return [
     { token: 'prod-token-1', serverFactory: () => createDevServer() },
     { token: 'prod-token-2', serverFactory: () => createTestServer() }

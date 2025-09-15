@@ -1,6 +1,7 @@
 import { strictEqual, deepStrictEqual, ok } from 'node:assert';
-import { afterEach, beforeEach, describe, mock, test } from 'node:test';
 import { randomUUID } from 'node:crypto';
+import { afterEach, beforeEach, describe, mock, test } from 'node:test';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import Fastify from 'fastify';
 
@@ -15,12 +16,12 @@ describe('Per-Bearer Token Integration Tests', () => {
     const createMathServer = async () => {
       const server = new McpServer({ name: 'math-server', version: '1.0.0' });
       server.tool('add', 'Add two numbers', {
-        a: { type: 'number' }, 
+        a: { type: 'number' },
         b: { type: 'number' }
       }, ({ a, b }) => ({
         content: [{ type: 'text', text: `${a + b}` }]
       }));
-      return server;
+      return server.server;
     };
 
     const createTimeServer = async () => {
@@ -28,7 +29,7 @@ describe('Per-Bearer Token Integration Tests', () => {
       server.tool('now', 'Get current time', {}, () => ({
         content: [{ type: 'text', text: new Date().toISOString() }]
       }));
-      return server;
+      return server.server;
     };
 
     // Create token provider
@@ -66,9 +67,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -87,9 +88,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -127,9 +128,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -150,9 +151,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream',
+          accept: 'application/json, text/event-stream',
           'mcp-session-id': mathSessionId
         },
         body: {
@@ -168,9 +169,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -191,9 +192,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream',
+          accept: 'application/json, text/event-stream',
           'mcp-session-id': timeSessionId
         },
         body: {
@@ -207,13 +208,29 @@ describe('Per-Bearer Token Integration Tests', () => {
       strictEqual(mathToolsResponse.statusCode, 200);
       strictEqual(timeToolsResponse.statusCode, 200);
 
+      // Parse Server-Sent Events responses
+      const parseSseResponse = (payload: string) => {
+        const lines = payload.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            return JSON.parse(line.substring(6));
+          }
+        }
+        return null;
+      };
+
+      const mathTools = parseSseResponse(mathToolsResponse.payload);
+      const timeTools = parseSseResponse(timeToolsResponse.payload);
+
       // Math server should have 'add' tool
-      ok(mathToolsResponse.payload.includes('add'));
-      ok(!mathToolsResponse.payload.includes('now'));
+      const mathToolNames = mathTools?.result?.tools?.map((t: any) => t.name) || [];
+      ok(mathToolNames.includes('add'));
+      ok(!mathToolNames.includes('now'));
 
       // Time server should have 'now' tool
-      ok(timeToolsResponse.payload.includes('now'));
-      ok(!timeToolsResponse.payload.includes('add'));
+      const timeToolNames = timeTools?.result?.tools?.map((t: any) => t.name) || [];
+      ok(timeToolNames.includes('now'));
+      ok(!timeToolNames.includes('add'));
     });
 
     test('should reject requests with invalid bearer tokens', async () => {
@@ -221,9 +238,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer invalid-token',
+          authorization: 'Bearer invalid-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -246,9 +263,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -264,7 +281,7 @@ describe('Per-Bearer Token Integration Tests', () => {
 
       const sessionId = initResponse.headers['mcp-session-id'];
       const mcp = getMcpDecorator(app);
-      
+
       strictEqual(mcp.getStats().activeSessions, 1);
 
       // Delete session
@@ -272,7 +289,7 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'DELETE',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'mcp-session-id': sessionId
         }
       });
@@ -300,9 +317,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer runtime-token',
+          authorization: 'Bearer runtime-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -326,9 +343,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -353,9 +370,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream',
+          accept: 'application/json, text/event-stream',
           'mcp-session-id': sessionId
         },
         body: {
@@ -374,7 +391,7 @@ describe('Per-Bearer Token Integration Tests', () => {
       const createUpdatedServer = async () => {
         const server = new McpServer({ name: 'updated-math-server', version: '2.0.0' });
         server.tool('subtract', 'Subtract numbers', {
-          a: { type: 'number' }, 
+          a: { type: 'number' },
           b: { type: 'number' }
         }, ({ a, b }) => ({
           content: [{ type: 'text', text: `${a - b}` }]
@@ -390,9 +407,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -413,43 +430,41 @@ describe('Per-Bearer Token Integration Tests', () => {
 
   describe('Concurrent Access', () => {
     test('should handle multiple concurrent sessions with same token', async () => {
-      const requests = Array.from({ length: 3 }, (_, i) => 
-        app.inject({
-          method: 'POST',
-          url: '/mcp',
-          headers: {
-            'authorization': 'Bearer math-token',
-            'content-type': 'application/json',
-            'accept': 'application/json, text/event-stream'
-          },
-          body: {
-            jsonrpc: '2.0',
-            id: i + 1,
-            method: 'initialize',
-            params: {
-              protocolVersion: '2024-11-05',
-              capabilities: {},
-              clientInfo: { name: `client-${i}`, version: '1.0.0' }
-            }
+      const requests = Array.from({ length: 3 }, (_, i) => app.inject({
+        method: 'POST',
+        url: '/mcp',
+        headers: {
+          authorization: 'Bearer math-token',
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream'
+        },
+        body: {
+          jsonrpc: '2.0',
+          id: i + 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: `client-${i}`, version: '1.0.0' }
           }
-        })
-      );
+        }
+      }));
 
       const responses = await Promise.all(requests);
 
       // All should succeed
-      responses.forEach(response => {
+      responses.forEach((response) => {
         strictEqual(response.statusCode, 200);
         ok(response.headers['mcp-session-id']);
       });
 
       // Should have 3 different session IDs
-      const sessionIds = responses.map(r => r.headers['mcp-session-id']);
+      const sessionIds = responses.map((r) => r.headers['mcp-session-id']);
       const uniqueSessionIds = new Set(sessionIds);
       strictEqual(uniqueSessionIds.size, 3);
 
       // All should use the same math-server
-      responses.forEach(response => {
+      responses.forEach((response) => {
         ok(response.payload.includes('math-server'));
       });
     });
@@ -459,9 +474,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -479,9 +494,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -514,9 +529,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Invalid-Format token',
+          authorization: 'Invalid-Format token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -543,7 +558,7 @@ describe('Per-Bearer Token Integration Tests', () => {
         url: '/mcp',
         headers: {
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -575,9 +590,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer error-token',
+          authorization: 'Bearer error-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -603,9 +618,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -623,9 +638,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -647,9 +662,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream',
+          accept: 'application/json, text/event-stream',
           'mcp-session-id': mathSessionId // Wrong session for this token
         },
         body: {
@@ -670,9 +685,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer math-token',
+          authorization: 'Bearer math-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -690,9 +705,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer time-token',
+          authorization: 'Bearer time-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -728,9 +743,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer cache-token',
+          authorization: 'Bearer cache-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',
@@ -748,9 +763,9 @@ describe('Per-Bearer Token Integration Tests', () => {
         method: 'POST',
         url: '/mcp',
         headers: {
-          'authorization': 'Bearer cache-token',
+          authorization: 'Bearer cache-token',
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream'
+          accept: 'application/json, text/event-stream'
         },
         body: {
           jsonrpc: '2.0',

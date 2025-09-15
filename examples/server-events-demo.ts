@@ -3,13 +3,14 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
 import { createPerBearerMcpServer } from '../src/per-bearer-mcp-server.ts';
 
 // ============================================================================
 // COMPLETE EVENT MONITORING EXAMPLE
 // ============================================================================
 
-async function comprehensiveEventsDemo() {
+async function comprehensiveEventsDemo () {
   const server = createPerBearerMcpServer({
     port: 0, // Dynamic port
     logging: true
@@ -18,9 +19,9 @@ async function comprehensiveEventsDemo() {
   // ========================================================================
   // SERVER LIFECYCLE EVENTS
   // ========================================================================
-  
+
   server.on('started', (info) => {
-    console.log(`🟢 SERVER STARTED`);
+    console.log('🟢 SERVER STARTED');
     console.log(`   URL: ${info.url}`);
     console.log(`   Port: ${info.port} (${info.port === 0 ? 'dynamic' : 'fixed'})`);
     console.log(`   Host: ${info.host}`);
@@ -28,7 +29,7 @@ async function comprehensiveEventsDemo() {
   });
 
   server.on('stopped', () => {
-    console.log(`🔴 SERVER STOPPED - All resources cleaned up`);
+    console.log('🔴 SERVER STOPPED - All resources cleaned up');
   });
 
   // ========================================================================
@@ -36,14 +37,14 @@ async function comprehensiveEventsDemo() {
   // ========================================================================
 
   server.on('serverRegistered', (info) => {
-    console.log(`📦 MCP SERVER REGISTERED`);
+    console.log('📦 MCP SERVER REGISTERED');
     console.log(`   Token: ${info.token}`);
     console.log(`   Server: ${info.serverName} v${info.serverVersion}`);
     console.log(`   Registered: ${info.registeredAt.toISOString()}`);
   });
 
   server.on('serverRemoved', (info) => {
-    console.log(`🗑️  MCP SERVER REMOVED`);
+    console.log('🗑️  MCP SERVER REMOVED');
     console.log(`   Token: ${info.token}`);
     console.log(`   Server: ${info.serverName}`);
     console.log(`   Had active sessions: ${info.hadActiveSessions ? 'YES' : 'NO'}`);
@@ -51,7 +52,7 @@ async function comprehensiveEventsDemo() {
   });
 
   server.on('serverUpdated', (info) => {
-    console.log(`🔄 MCP SERVER UPDATED`);
+    console.log('🔄 MCP SERVER UPDATED');
     console.log(`   Token: ${info.token}`);
     console.log(`   Old server: ${info.oldServerName}`);
     console.log(`   New server: ${info.newServerName}`);
@@ -79,7 +80,7 @@ async function comprehensiveEventsDemo() {
   // ========================================================================
 
   server.on('sessionCreated', (session) => {
-    console.log(`👤 SESSION CREATED`);
+    console.log('👤 SESSION CREATED');
     console.log(`   Session ID: ${session.sessionId}`);
     console.log(`   Token: ${session.token}`);
     console.log(`   Server: ${session.serverName}`);
@@ -87,14 +88,14 @@ async function comprehensiveEventsDemo() {
   });
 
   server.on('sessionDestroyed', (session) => {
-    console.log(`💀 SESSION DESTROYED`);
+    console.log('💀 SESSION DESTROYED');
     console.log(`   Session ID: ${session.sessionId}`);
     console.log(`   Token: ${session.token}`);
     console.log(`   Duration: ${Date.now() - session.createdAt.getTime()}ms`);
   });
 
   server.on('toolCalled', (call) => {
-    console.log(`🔧 TOOL CALLED`);
+    console.log('🔧 TOOL CALLED');
     console.log(`   Tool: ${call.toolName}`);
     console.log(`   Token: ${call.token}`);
     console.log(`   Session: ${call.sessionId}`);
@@ -103,7 +104,7 @@ async function comprehensiveEventsDemo() {
   });
 
   server.on('transportError', (sessionId, error) => {
-    console.error(`❌ TRANSPORT ERROR`);
+    console.error('❌ TRANSPORT ERROR');
     console.error(`   Session: ${sessionId}`);
     console.error(`   Error: ${error.message}`);
   });
@@ -112,16 +113,16 @@ async function comprehensiveEventsDemo() {
   // DEMO SEQUENCE
   // ========================================================================
 
-  console.log(`\n🎬 STARTING EVENT DEMONSTRATION\n`);
+  console.log('\n🎬 STARTING EVENT DEMONSTRATION\n');
 
   // Start server
-  console.log(`Step 1: Starting server...`);
+  console.log('Step 1: Starting server...');
   const info = await server.start();
 
   await delay(500);
 
   // Add initial tokens
-  console.log(`\nStep 2: Adding initial tokens...`);
+  console.log('\nStep 2: Adding initial tokens...');
   server
     .addToken('math-v1', () => createMathServer('v1'))
     .addToken('time-v1', () => createTimeServer('v1'));
@@ -129,7 +130,7 @@ async function comprehensiveEventsDemo() {
   await delay(500);
 
   // Add more tokens
-  console.log(`\nStep 3: Adding more tokens...`);
+  console.log('\nStep 3: Adding more tokens...');
   server
     .addToken('greeting-v1', () => createGreetingServer('v1'))
     .addToken('analytics-v1', () => createAnalyticsServer('v1'));
@@ -137,19 +138,19 @@ async function comprehensiveEventsDemo() {
   await delay(500);
 
   // Update a token (simulate server upgrade)
-  console.log(`\nStep 4: Updating math server to v2...`);
+  console.log('\nStep 4: Updating math server to v2...');
   server.updateToken('math-v1', () => createMathServer('v2'));
 
   await delay(500);
 
   // Remove a token
-  console.log(`\nStep 5: Removing analytics server...`);
+  console.log('\nStep 5: Removing analytics server...');
   server.removeToken('analytics-v1');
 
   await delay(500);
 
   // Show final stats
-  console.log(`\nStep 6: Final status:`);
+  console.log('\nStep 6: Final status:');
   const stats = server.getStats();
   console.log(`   Registered tokens: ${stats.registeredTokens}`);
   console.log(`   Active servers: ${stats.activeServers}`);
@@ -159,10 +160,10 @@ async function comprehensiveEventsDemo() {
   await delay(1000);
 
   // Stop server
-  console.log(`\nStep 7: Stopping server...`);
+  console.log('\nStep 7: Stopping server...');
   await server.stop();
 
-  console.log(`\n✨ Demo complete! All events were fired correctly.\n`);
+  console.log('\n✨ Demo complete! All events were fired correctly.\n');
 
   return server;
 }
@@ -171,7 +172,7 @@ async function comprehensiveEventsDemo() {
 // PRODUCTION MONITORING EXAMPLE
 // ============================================================================
 
-function setupProductionMonitoring(mcpServer) {
+function setupProductionMonitoring (mcpServer) {
   // Server lifecycle monitoring
   mcpServer.on('started', (info) => {
     metrics.gauge('mcp_server_started', 1, { port: info.port });
@@ -187,13 +188,13 @@ function setupProductionMonitoring(mcpServer) {
   mcpServer.on('serverRegistered', (info) => {
     metrics.counter('mcp_servers_registered').inc();
     metrics.gauge('mcp_registered_servers', mcpServer.getStats().registeredTokens);
-    
+
     logger.info('MCP server registered', {
       token: info.token,
       serverName: info.serverName,
       serverVersion: info.serverVersion
     });
-    
+
     // Alert if server registration takes too long
     const registrationDelay = Date.now() - info.registeredAt.getTime();
     if (registrationDelay > 5000) {
@@ -204,20 +205,20 @@ function setupProductionMonitoring(mcpServer) {
   mcpServer.on('serverRemoved', (info) => {
     metrics.counter('mcp_servers_removed').inc();
     metrics.gauge('mcp_registered_servers', mcpServer.getStats().registeredTokens);
-    
+
     if (info.hadActiveSessions) {
       alerts.warn('Server removed with active sessions', {
         token: info.token,
         serverName: info.serverName
       });
     }
-    
+
     logger.info('MCP server removed', info);
   });
 
   mcpServer.on('serverUpdated', (info) => {
     metrics.counter('mcp_servers_updated').inc();
-    
+
     logger.info('MCP server updated', {
       token: info.token,
       oldServer: info.oldServerName,
@@ -238,13 +239,17 @@ function setupProductionMonitoring(mcpServer) {
 
   // Tool usage monitoring
   mcpServer.on('toolCalled', (call) => {
-    metrics.counter('mcp_tools_called').inc({ 
-      tool: call.toolName, 
-      token: call.token 
+    metrics.counter('mcp_tools_called').inc({
+      tool: call.toolName,
+      token: call.token
     });
-    
+
     // Log high-value tool usage
-    if (['analytics', 'export_data', 'admin_action'].includes(call.toolName)) {
+    if ([
+      'analytics',
+      'export_data',
+      'admin_action'
+    ].includes(call.toolName)) {
       audit.log('High-value tool used', call);
     }
   });
@@ -262,22 +267,22 @@ function setupProductionMonitoring(mcpServer) {
 
 class EventDrivenCustomerService {
   private mcp = createPerBearerMcpServer({ port: 9090 });
-  private customerServers = new Map<string, { name: string, version: string }>();
+  private customerServers = new Map<string, { name: string; version: string }>();
 
-  constructor() {
+  constructor () {
     this.setupEventHandlers();
   }
 
-  private setupEventHandlers() {
+  private setupEventHandlers () {
     // Track server registrations
     this.mcp.on('serverRegistered', (info) => {
       this.customerServers.set(info.token, {
         name: info.serverName,
         version: info.serverVersion
       });
-      
+
       console.log(`🎯 Customer server deployed: ${info.serverName} for ${info.token}`);
-      
+
       // Send notification to customer
       this.notifyCustomer(info.token, 'Your MCP server is now active!');
     });
@@ -289,21 +294,21 @@ class EventDrivenCustomerService {
         name: info.newServerName,
         version: '1.0.0' // or extract from server
       });
-      
+
       console.log(`⬆️ Customer upgraded: ${info.token}`);
       console.log(`   ${info.oldServerName} → ${info.newServerName}`);
-      
+
       this.notifyCustomer(info.token, 'Your plan has been upgraded!');
     });
 
     // Track server removals (customer churn)
     this.mcp.on('serverRemoved', (info) => {
       this.customerServers.delete(info.token);
-      
+
       console.log(`👋 Customer offboarded: ${info.token}`);
-      
+
       if (info.hadActiveSessions) {
-        console.log(`⚠️ Warning: Customer had active sessions during removal`);
+        console.log('⚠️ Warning: Customer had active sessions during removal');
       }
     });
 
@@ -319,23 +324,23 @@ class EventDrivenCustomerService {
     });
   }
 
-  private notifyCustomer(token: string, message: string) {
+  private notifyCustomer (token: string, message: string) {
     // Implementation would send notification
     console.log(`📧 Notification to ${token}: ${message}`);
   }
 
-  private updateCustomerActivity(token: string, activity: string, details?: string) {
+  private updateCustomerActivity (token: string, activity: string, details?: string) {
     // Implementation would update analytics/billing
     console.log(`📈 Activity logged: ${token} - ${activity}${details ? ` (${details})` : ''}`);
   }
 }
 
 // Helper functions
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function delay (ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createMathServer(version: string) {
+function createMathServer (version: string) {
   const server = new McpServer({ name: `math-server-${version}`, version });
   server.tool('add', 'Add numbers', {
     a: { type: 'number' }, b: { type: 'number' }
@@ -343,7 +348,7 @@ function createMathServer(version: string) {
   return server;
 }
 
-function createTimeServer(version: string) {
+function createTimeServer (version: string) {
   const server = new McpServer({ name: `time-server-${version}`, version });
   server.tool('now', 'Current time', {}, () => ({
     content: [{ type: 'text', text: `Time: ${new Date().toISOString()}` }]
@@ -351,7 +356,7 @@ function createTimeServer(version: string) {
   return server;
 }
 
-function createGreetingServer(version: string) {
+function createGreetingServer (version: string) {
   const server = new McpServer({ name: `greeting-server-${version}`, version });
   server.tool('greet', 'Say hello', {
     name: { type: 'string' }
@@ -359,7 +364,7 @@ function createGreetingServer(version: string) {
   return server;
 }
 
-function createAnalyticsServer(version: string) {
+function createAnalyticsServer (version: string) {
   const server = new McpServer({ name: `analytics-server-${version}`, version });
   server.tool('analytics', 'Get analytics', {}, () => ({
     content: [{ type: 'text', text: 'Analytics data...' }]
