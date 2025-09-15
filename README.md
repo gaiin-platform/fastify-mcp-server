@@ -77,6 +77,15 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 - ✅ **Configurable Endpoints**: Customizable MCP endpoint paths
 - ✅ **TypeScript Support**: Full type safety and IntelliSense support
 
+### 🆕 **Per-Bearer Token Features**
+
+- ✅ **Multi-Tenant Support**: Different bearer tokens access different MCP servers
+- ✅ **Runtime Token Management**: Add/remove/update tokens without server restart
+- ✅ **Server Isolation**: Each token gets its own dedicated MCP server instance
+- ✅ **Simple Interface**: Easy-to-use API for per-bearer server management
+- ✅ **Rich Events**: Comprehensive monitoring of tokens, servers, and sessions
+- ✅ **Zero Downtime**: Dynamic token operations with automatic cleanup
+
 ## Installation
 
 ```bash
@@ -85,11 +94,21 @@ npm install fastify-mcp-server @modelcontextprotocol/sdk
 
 ## Quick Demo
 
-To quickly see the plugin in action, you can run the following example:
+To quickly see the plugin in action, you can run the following examples:
 
+### Standard MCP Server
 ```bash
 npm run dev
 npm run inspector
+```
+
+### 🆕 Per-Bearer Token Demo
+```bash
+# Start per-bearer token demo (3 different tokens with different tools)
+npm run demo:per-bearer
+
+# Start runtime token management demo (add/remove tokens live)
+npm run demo:runtime-tokens
 ```
 
 This will start a Fastify server with the MCP plugin enabled, allowing you to interact with it via the MCP inspector or any MCP-compatible client.
@@ -125,6 +144,121 @@ const mcpServer = getMcpDecorator(app);
 
 // Start the server
 await app.listen({ host: '127.0.0.1', port: 3000 });
+```
+
+## 🆕 Per-Bearer Token MCP Servers
+
+This plugin now supports **per-bearer token MCP servers**, allowing different bearer tokens to access completely different sets of tools and capabilities. Perfect for multi-tenant SaaS applications!
+
+### Quick Start with Per-Bearer Tokens
+
+```typescript
+import { TokenBasedServerProvider } from 'fastify-mcp-server';
+
+// Create different servers for different tokens
+const bearerTokenProvider = new TokenBasedServerProvider({
+  'basic-user-token': () => createBasicMathServer(),
+  'admin-token': () => createAdminServer(),
+  'premium-customer-token': () => createPremiumAnalyticsServer()
+});
+
+await app.register(FastifyMcpServer, {
+  endpoint: '/mcp',
+  authorization: {
+    bearerTokenProvider,
+    bearerMiddlewareOptions: {
+      verifier: bearerTokenProvider  // Use same provider for verification
+    }
+  }
+});
+```
+
+### Simple Interface (Recommended)
+
+```typescript
+import { createPerBearerMcpServer } from 'fastify-mcp-server';
+
+const server = createPerBearerMcpServer({
+  port: 0,        // Dynamic port assignment
+  logging: true
+})
+.addToken('math-token', () => createMathServer())
+.addToken('admin-token', () => createAdminServer());
+
+// Rich event system
+server.on('started', (info) => console.log(\`🚀 Server at \${info.url}\`));
+server.on('serverRegistered', (info) => 
+  console.log(\`📦 \${info.serverName} registered for \${info.token}\`));
+server.on('sessionCreated', (session) => 
+  console.log(\`👤 Session: \${session.sessionId}\`));
+
+const { port } = await server.start();
+console.log(\`Started on dynamic port: \${port}\`);
+```
+
+### Runtime Token Management
+
+```typescript
+// Add tokens at runtime (zero downtime)
+server.addToken('new-customer-token', () => createCustomerServer());
+
+// Remove expired tokens
+server.removeToken('expired-token');
+
+// Update existing tokens (plan upgrades)
+server.updateToken('customer-token', () => createPremiumServer());
+
+// Monitor status
+console.log('Active tokens:', server.getTokens());
+console.log('Stats:', server.getStats());
+```
+
+### Multi-Tenant SaaS Pattern
+
+```typescript
+class CustomerMcpService {
+  private mcp = createPerBearerMcpServer({ port: 9090 });
+
+  async addCustomer(customerId, name, plan) {
+    const token = \`customer-\${customerId}-token\`;
+    this.mcp.addToken(token, () => this.createCustomerServer(name, plan));
+    return { token, features: this.getPlanFeatures(plan) };
+  }
+
+  removeCustomer(customerId) {
+    this.mcp.removeToken(\`customer-\${customerId}-token\`);
+  }
+
+  upgradeCustomer(customerId, newPlan) {
+    const token = \`customer-\${customerId}-token\`;
+    this.mcp.updateToken(token, () => this.createCustomerServer(name, newPlan));
+  }
+}
+```
+
+### MCP Client Configuration
+
+Each bearer token connects to the same URL but gets different tools:
+
+```json
+{
+  "mcpServers": {
+    "basic-math": {
+      "type": "http",
+      "url": "http://127.0.0.1:9081/mcp",
+      "headers": {
+        "Authorization": "Bearer basic-user-token"
+      }
+    },
+    "admin-tools": {
+      "type": "http",
+      "url": "http://127.0.0.1:9081/mcp",
+      "headers": {
+        "Authorization": "Bearer admin-token"
+      }
+    }
+  }
+}
 ```
 
 ## API Reference
@@ -187,6 +321,45 @@ sessionManager.on('sessionDestroyed', (sessionId: string) => {
 // Transport errors
 sessionManager.on('transportError', (sessionId: string, error: Error) => {
   console.error(`Error in session ${sessionId}:`, error);
+});
+```
+
+### 🆕 Per-Bearer Token Events
+
+The new per-bearer token interface provides rich event monitoring:
+
+```typescript
+const server = createPerBearerMcpServer();
+
+// Server lifecycle events
+server.on('started', (info) => console.log(`🚀 Started at ${info.url}`));
+server.on('stopped', () => console.log('🔴 Stopped'));
+
+// Token management events
+server.on('tokenAdded', (token) => console.log(`➕ Token: ${token}`));
+server.on('tokenRemoved', (token) => console.log(`➖ Token: ${token}`));
+server.on('tokenUpdated', (token) => console.log(`🔄 Token: ${token}`));
+
+// Server registration events (detailed tracking)
+server.on('serverRegistered', (info) => {
+  console.log(`📦 ${info.serverName} v${info.serverVersion} registered for ${info.token}`);
+});
+
+server.on('serverRemoved', (info) => {
+  console.log(`🗑️ ${info.serverName} removed (had sessions: ${info.hadActiveSessions})`);
+});
+
+server.on('serverUpdated', (info) => {
+  console.log(`🔄 Server updated: ${info.oldServerName} → ${info.newServerName}`);
+});
+
+// Session and activity events
+server.on('sessionCreated', (session) => {
+  console.log(`👤 Session ${session.sessionId} for ${session.token}`);
+});
+
+server.on('toolCalled', (call) => {
+  console.log(`🔧 Tool ${call.toolName} called by ${call.token}`);
 });
 ```
 
@@ -426,6 +599,8 @@ npm run dev
 ### Scripts
 
 - `npm run dev` - Run development server with hot reload
+- `npm run demo:per-bearer` - Run per-bearer token demo with 3 different tokens
+- `npm run demo:runtime-tokens` - Run runtime token management demo
 - `npm run build` - Build TypeScript to JavaScript
 - `npm test` - Run test suite with 100% coverage
 - `npm run test:lcov` - Generate LCOV coverage report
@@ -433,11 +608,33 @@ npm run dev
 
 ### Testing
 
-The project maintains 100% test coverage. Run tests with:
+The project maintains comprehensive test coverage including:
+
+**Core Tests:**
+- Bearer token authentication and validation
+- Session management and lifecycle
+- Plugin registration and configuration
+- Well-known OAuth endpoints
+
+**🆕 Per-Bearer Token Tests:**
+- `test/per-bearer-token.test.ts` - Token provider functionality
+- `test/server-events.test.ts` - Server lifecycle events
+- `test/per-bearer-integration.test.ts` - End-to-end integration tests
+
+Run tests with:
 
 ```bash
 npm test
 ```
+
+**Test Coverage Areas:**
+- ✅ Runtime token management (add/remove/update)
+- ✅ Server isolation and caching
+- ✅ Event emission and timing
+- ✅ Error handling and edge cases
+- ✅ Concurrent access patterns
+- ✅ Session cleanup and memory management
+- ✅ Authentication and authorization flows
 
 ## Contributing
 
