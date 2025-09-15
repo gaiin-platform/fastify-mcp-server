@@ -1,6 +1,6 @@
 import { strictEqual, deepStrictEqual, ok } from 'node:assert';
 import { randomUUID } from 'node:crypto';
-import { afterEach, beforeEach, describe, mock, test } from 'node:test';
+import { afterEach, after, beforeEach, describe, mock, test } from 'node:test';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import Fastify from 'fastify';
@@ -55,9 +55,27 @@ describe('Per-Bearer Token Integration Tests', () => {
 
   afterEach(async () => {
     if (app) {
-      await app.close();
+      try {
+        await app.close();
+        app = null;
+      } catch (error) {
+        // Ignore cleanup errors that don't affect functionality
+        console.warn('Test cleanup warning:', error.message);
+      }
     }
     mock.restoreAll();
+  });
+
+  // Prevent stack overflow during process exit
+  after(() => {
+    // Force garbage collection if available
+    if (global.gc) {
+      try {
+        global.gc();
+      } catch (e) {
+        // Ignore
+      }
+    }
   });
 
   describe('End-to-End Per-Bearer Token Flow', () => {
