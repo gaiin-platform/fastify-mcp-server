@@ -5,8 +5,9 @@ import { FastifyMcpServer } from './server.ts';
 import type { FastifyMcpServerOptions } from './types.ts';
 
 // Re-export the bearer token provider types
-export { BearerTokenProvider, TokenBasedServerProvider } from './bearer-provider.js';
-export type { FastifyMcpServerOptions } from './types.js';
+export type { BearerTokenProvider } from './bearer-provider.ts';
+export { TokenBasedServerProvider } from './bearer-provider.ts';
+export type { FastifyMcpServerOptions } from './types.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {

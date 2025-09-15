@@ -3,7 +3,8 @@ import { EventEmitter } from 'node:events';
 
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import type { BearerTokenProvider } from './bearer-provider.js';
+
+import type { BearerTokenProvider } from './bearer-provider.ts';
 
 type SessionsEvents = {
   sessionCreated: [string];
@@ -28,7 +29,7 @@ export class SessionManager extends EventEmitter<SessionsEvents> {
     super({ captureRejections: true });
     this.defaultServer = defaultServer;
     this.bearerTokenProvider = bearerTokenProvider;
-    
+
     if (!defaultServer && !bearerTokenProvider) {
       throw new Error('Either defaultServer or bearerTokenProvider must be provided');
     }

@@ -46,7 +46,7 @@ export class PostRequestHandler implements McpRequestHandler {
     }
 
     // No sessionId, but is an initialize request: create new session
-    const bearerToken = (request.raw as any).bearerToken; // Get the bearer token from request
+    const bearerToken = (request.raw as { bearerToken?: string }).bearerToken; // Get the bearer token from request
     const transport = await this.sessionManager.createSession(bearerToken);
     await transport.handleRequest(request.raw, reply.raw, request.body);
   }

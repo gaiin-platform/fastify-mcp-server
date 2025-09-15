@@ -1,7 +1,8 @@
 import type { BearerAuthMiddlewareOptions } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { OAuthProtectedResourceMetadata, OAuthMetadata } from '@modelcontextprotocol/sdk/shared/auth.js';
-import type { BearerTokenProvider } from './bearer-provider.js';
+
+import type { BearerTokenProvider } from './bearer-provider.ts';
 
 export type AuthorizationOptions = {
   /**
