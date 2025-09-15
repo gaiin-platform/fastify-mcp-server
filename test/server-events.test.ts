@@ -57,7 +57,10 @@ describe('Server Lifecycle Events', () => {
 
   describe('Token Events', () => {
     test('should emit tokenAdded event when adding token', () => {
-      const mockFactory = async () => new McpServer({ name: 'test', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'test', version: '1.0.0' });
+        return { server: mcp.server, name: 'test', version: '1.0.0' };
+      };
 
       server.addToken('test-token', mockFactory);
 
@@ -66,7 +69,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should emit tokenRemoved event when removing token', () => {
-      const mockFactory = async () => new McpServer({ name: 'test', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'test', version: '1.0.0' });
+        return { server: mcp.server, name: 'test', version: '1.0.0' };
+      };
 
       server.addToken('test-token', mockFactory);
       server.removeToken('test-token');
@@ -76,8 +82,14 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should emit tokenUpdated event when updating token', () => {
-      const mockFactory1 = async () => new McpServer({ name: 'test1', version: '1.0.0' }).server;
-      const mockFactory2 = async () => new McpServer({ name: 'test2', version: '2.0.0' }).server;
+      const mockFactory1 = async () => {
+        const mcp = new McpServer({ name: 'test1', version: '1.0.0' });
+        return { server: mcp.server, name: 'test1', version: '1.0.0' };
+      };
+      const mockFactory2 = async () => {
+        const mcp = new McpServer({ name: 'test2', version: '2.0.0' });
+        return { server: mcp.server, name: 'test2', version: '2.0.0' };
+      };
 
       server.addToken('test-token', mockFactory1);
       server.updateToken('test-token', mockFactory2);
@@ -93,7 +105,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should not emit tokenUpdated for non-existent token', () => {
-      const mockFactory = async () => new McpServer({ name: 'test', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'test', version: '1.0.0' });
+        return { server: mcp.server, name: 'test', version: '1.0.0' };
+      };
 
       server.updateToken('nonexistent', mockFactory);
 
@@ -126,7 +141,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should emit serverRemoved event with session info', () => {
-      const mockFactory = async () => new McpServer({ name: 'test-server', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'test-server', version: '1.0.0' });
+        return { server: mcp.server, name: 'test-server', version: '1.0.0' };
+      };
 
       server.addToken('test-token', mockFactory);
 
@@ -231,8 +249,14 @@ describe('Server Lifecycle Events', () => {
 
   describe('Statistics and Monitoring', () => {
     test('should track token statistics accurately', () => {
-      const factory1 = async () => new McpServer({ name: 'server1', version: '1.0.0' }).server;
-      const factory2 = async () => new McpServer({ name: 'server2', version: '1.0.0' }).server;
+      const factory1 = async () => {
+        const mcp = new McpServer({ name: 'server1', version: '1.0.0' });
+        return { server: mcp.server, name: 'server1', version: '1.0.0' };
+      };
+      const factory2 = async () => {
+        const mcp = new McpServer({ name: 'server2', version: '1.0.0' });
+        return { server: mcp.server, name: 'server2', version: '1.0.0' };
+      };
 
       // Add tokens
       server.addToken('token1', factory1);
@@ -277,7 +301,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should provide accurate token existence checks', () => {
-      const factory = async () => new McpServer({ name: 'test', version: '1.0.0' }).server;
+      const factory = async () => {
+        const mcp = new McpServer({ name: 'test', version: '1.0.0' });
+        return { server: mcp.server, name: 'test', version: '1.0.0' };
+      };
 
       strictEqual(server.hasToken('nonexistent'), false);
 
@@ -301,9 +328,18 @@ describe('Server Lifecycle Events', () => {
 
   describe('Method Chaining', () => {
     test('should support fluent interface for token operations', () => {
-      const factory1 = async () => new McpServer({ name: 'server1', version: '1.0.0' }).server;
-      const factory2 = async () => new McpServer({ name: 'server2', version: '1.0.0' }).server;
-      const factory3 = async () => new McpServer({ name: 'server3', version: '1.0.0' }).server;
+      const factory1 = async () => {
+        const mcp = new McpServer({ name: 'server1', version: '1.0.0' });
+        return { server: mcp.server, name: 'server1', version: '1.0.0' };
+      };
+      const factory2 = async () => {
+        const mcp = new McpServer({ name: 'server2', version: '1.0.0' });
+        return { server: mcp.server, name: 'server2', version: '1.0.0' };
+      };
+      const factory3 = async () => {
+        const mcp = new McpServer({ name: 'server3', version: '1.0.0' });
+        return { server: mcp.server, name: 'server3', version: '1.0.0' };
+      };
 
       const result = server
         .addToken('token1', factory1)
@@ -323,9 +359,18 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should support chained operations', () => {
-      const factory1 = async () => new McpServer({ name: 'server1', version: '1.0.0' }).server;
-      const factory2 = async () => new McpServer({ name: 'server2', version: '1.0.0' }).server;
-      const factory3 = async () => new McpServer({ name: 'server3', version: '1.0.0' }).server;
+      const factory1 = async () => {
+        const mcp = new McpServer({ name: 'server1', version: '1.0.0' });
+        return { server: mcp.server, name: 'server1', version: '1.0.0' };
+      };
+      const factory2 = async () => {
+        const mcp = new McpServer({ name: 'server2', version: '1.0.0' });
+        return { server: mcp.server, name: 'server2', version: '1.0.0' };
+      };
+      const factory3 = async () => {
+        const mcp = new McpServer({ name: 'server3', version: '1.0.0' });
+        return { server: mcp.server, name: 'server3', version: '1.0.0' };
+      };
 
       server
         .addToken('token1', factory1)
@@ -402,7 +447,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should emit events in correct order for token removal', () => {
-      const mockFactory = async () => new McpServer({ name: 'test-server', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'test-server', version: '1.0.0' });
+        return { server: mcp.server, name: 'test-server', version: '1.0.0' };
+      };
 
       server.addToken('test-token', mockFactory);
 
@@ -476,7 +524,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should provide complete serverRemoved event data', () => {
-      const mockFactory = async () => new McpServer({ name: 'removed-server', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'removed-server', version: '1.0.0' });
+        return { server: mcp.server, name: 'removed-server', version: '1.0.0' };
+      };
 
       server.addToken('remove-token', mockFactory);
 
@@ -521,7 +572,10 @@ describe('Server Lifecycle Events', () => {
 
   describe('Edge Cases', () => {
     test('should handle server factory that returns server without name', async () => {
-      const mockFactory = async () => new McpServer({ name: '', version: '1.0.0' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: '', version: '1.0.0' });
+        return { server: mcp.server, name: '', version: '1.0.0' };
+      };
 
       server.addToken('unnamed-token', mockFactory);
 
@@ -533,7 +587,10 @@ describe('Server Lifecycle Events', () => {
     });
 
     test('should handle server factory that returns server without version', async () => {
-      const mockFactory = async () => new McpServer({ name: 'test-server', version: '' }).server;
+      const mockFactory = async () => {
+        const mcp = new McpServer({ name: 'test-server', version: '' });
+        return { server: mcp.server, name: 'test-server', version: '' };
+      };
 
       server.addToken('versionless-token', mockFactory);
 

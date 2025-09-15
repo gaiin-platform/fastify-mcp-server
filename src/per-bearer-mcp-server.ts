@@ -211,14 +211,43 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
    */
   updateToken (token: string, serverFactory: ServerFactory): this {
     const wrappedFactory = async () => {
-      const server = await serverFactory();
+      const result = await serverFactory();
+      
+      // Handle both Server instances and ServerWithMetadata objects
+      let server: Server;
+      let serverName = 'unnamed-server';
+      let serverVersion = '1.0.0';
+      
+      if (result && typeof result === 'object' && 'server' in result) {
+        // This is a ServerWithMetadata object
+        const metadata = result as unknown as ServerWithMetadata;
+        server = metadata.server;
+        serverName = metadata.name || serverName;
+        serverVersion = metadata.version || serverVersion;
+      } else {
+        // This is a direct Server instance
+        server = result as Server;
+        
+        // Try to extract metadata from the server instance
+        const anyServer = server as any;
+        serverName = anyServer.serverInfo?.name ||
+                    anyServer.options?.name ||
+                    anyServer._options?.name ||
+                    anyServer.name ||
+                    serverName;
+                    
+        serverVersion = anyServer.serverInfo?.version ||
+                       anyServer.options?.version ||
+                       anyServer._options?.version ||
+                       anyServer.version ||
+                       serverVersion;
+      }
 
       // Emit detailed server update event
-      const serverInfo = (server as any).serverInfo || {};
       this.emit('serverUpdated', {
         token,
         oldServerName: 'unknown-old-server', // TODO: Track previous server name
-        newServerName: serverInfo.name || 'unnamed-server',
+        newServerName: serverName,
         updatedAt: new Date()
       });
 

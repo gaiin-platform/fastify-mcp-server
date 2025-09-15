@@ -1,4 +1,4 @@
-import { strictEqual, deepStrictEqual, ok, throws } from 'node:assert';
+import { strictEqual, deepStrictEqual, ok, throws, rejects } from 'node:assert';
 import { afterEach, beforeEach, describe, mock, test } from 'node:test';
 
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
@@ -46,7 +46,7 @@ describe('Per-Bearer Token Functionality', () => {
     });
 
     test('should reject invalid tokens', async () => {
-      await throws(
+      await rejects(
         () => tokenProvider.verifyAccessToken('invalid-token'),
         { message: 'Invalid token' }
       );
@@ -72,7 +72,7 @@ describe('Per-Bearer Token Functionality', () => {
         scopes: []
       };
 
-      await throws(
+      await rejects(
         () => tokenProvider.createServerForToken('nonexistent', authInfo),
         { message: 'No server factory found for token' }
       );
@@ -199,7 +199,7 @@ describe('Per-Bearer Token Functionality', () => {
     });
 
     test('should fail to create session with invalid token', async () => {
-      await throws(
+      await rejects(
         () => sessionManager.createSession('invalid-token'),
         { message: 'Invalid token' }
       );
@@ -218,7 +218,7 @@ describe('Per-Bearer Token Functionality', () => {
     });
 
     test('should fail when no default server and no token provided', async () => {
-      await throws(
+      await rejects(
         () => sessionManager.createSession(),
         { message: 'No server available for session creation' }
       );
@@ -295,7 +295,7 @@ describe('Per-Bearer Token Functionality', () => {
         scopes: []
       };
 
-      await throws(
+      await rejects(
         () => tokenProvider.createServerForToken('error-token', authInfo),
         { message: 'Factory error' }
       );
