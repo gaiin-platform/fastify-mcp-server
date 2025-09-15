@@ -1,10 +1,11 @@
-import Fastify from 'fastify';
 import closeWithGrace from 'close-with-grace';
+import Fastify from 'fastify';
 
-import FastifyMcpStreamableHttp, { getMcpDecorator, TokenBasedServerProvider } from '../../src/index.js';
-import { createBasicMathServer } from './tools/basic-tools.js';
-import { createAdminServer } from './tools/admin-tools.js';
-import { createDataAnalysisServer } from './tools/data-tools.js';
+import { createAdminServer } from './tools/admin-tools.ts';
+import { createBasicMathServer } from './tools/basic-tools.ts';
+import { createDataAnalysisServer } from './tools/data-tools.ts';
+
+import FastifyMcpStreamableHttp, { getMcpDecorator, TokenBasedServerProvider } from '../../src/index.ts';
 
 // Define three different bearer tokens with different capabilities
 const TOKENS = {
@@ -13,7 +14,7 @@ const TOKENS = {
   'analyst-token': 'Data Analyst (Statistics tools)'
 };
 
-async function startPerBearerServer() {
+async function startPerBearerServer () {
   const app = Fastify({
     logger: {
       level: 'info',
@@ -114,7 +115,6 @@ async function startPerBearerServer() {
       app.log.info(`  • ${token} - ${description}`);
     });
     app.log.info('\nTest with: curl -H "Authorization: Bearer basic-user-token" http://127.0.0.1:9081/mcp\n');
-
   } catch (err) {
     app.log.error(err);
     process.exit(1);

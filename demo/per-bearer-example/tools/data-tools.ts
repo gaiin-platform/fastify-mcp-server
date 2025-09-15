@@ -4,7 +4,7 @@ import { z } from 'zod';
 /**
  * Creates a data analysis MCP server with data tools
  */
-export async function createDataAnalysisServer(): Promise<Server> {
+export async function createDataAnalysisServer (): Promise<Server> {
   const server = new Server(
     {
       name: 'data-analysis-server',
@@ -56,9 +56,9 @@ export async function createDataAnalysisServer(): Promise<Server> {
         const mean = numbers.reduce((sum, num) => sum + num, 0) / numbers.length;
         const variance = numbers.reduce((sum, num) => sum + Math.pow(num - mean, 2), 0) / numbers.length;
         const stdDev = Math.sqrt(variance);
-        
-        const outliers = numbers.filter(num => Math.abs(num - mean) > thresh * stdDev);
-        
+
+        const outliers = numbers.filter((num) => Math.abs(num - mean) > thresh * stdDev);
+
         return {
           content: [
             {
@@ -96,7 +96,8 @@ export async function createDataAnalysisServer(): Promise<Server> {
           description: 'Find outliers in a dataset using standard deviation',
           inputSchema: z.object({
             numbers: z.array(z.number()).describe('Array of numbers'),
-            threshold: z.number().optional().describe('Standard deviation threshold (default: 2)')
+            threshold: z.number().optional()
+              .describe('Standard deviation threshold (default: 2)')
           }).passthrough()
         }
       ]

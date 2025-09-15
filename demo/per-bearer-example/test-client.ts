@@ -8,11 +8,11 @@ const SERVER_URL = 'http://127.0.0.1:9081/mcp';
 
 const TOKENS = {
   'basic-user-token': 'Basic User (Math tools)',
-  'admin-token': 'Admin User (System tools)', 
+  'admin-token': 'Admin User (System tools)',
   'analyst-token': 'Data Analyst (Statistics tools)'
 };
 
-async function testMcpEndpoint(token: string, description: string) {
+async function testMcpEndpoint (token: string, description: string) {
   console.log(`\n🧪 Testing ${description} with token: ${token}`);
   console.log('='.repeat(60));
 
@@ -21,7 +21,7 @@ async function testMcpEndpoint(token: string, description: string) {
     const initResponse = await fetch(SERVER_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -54,7 +54,7 @@ async function testMcpEndpoint(token: string, description: string) {
     const toolsResponse = await fetch(SERVER_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         'mcp-session-id': sessionId
       },
@@ -93,13 +93,30 @@ async function testMcpEndpoint(token: string, description: string) {
           break;
         case 'calculate_mean':
         case 'calculate_median':
-          testArgs = { numbers: [1, 2, 3, 4, 5] };
+          testArgs = {
+            numbers: [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          };
           break;
         case 'restart_service':
           testArgs = { service: 'nginx' };
           break;
         case 'find_outliers':
-          testArgs = { numbers: [1, 2, 3, 4, 50], threshold: 2 };
+          testArgs = {
+            numbers: [
+              1,
+              2,
+              3,
+              4,
+              50
+            ],
+            threshold: 2
+          };
           break;
         default:
           console.log(`⚠️  Don't know how to test tool: ${firstTool.name}`);
@@ -107,11 +124,11 @@ async function testMcpEndpoint(token: string, description: string) {
       }
 
       console.log(`\n🔧 Testing tool: ${firstTool.name}`);
-      
+
       const toolResponse = await fetch(SERVER_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
           'mcp-session-id': sessionId
         },
@@ -140,32 +157,31 @@ async function testMcpEndpoint(token: string, description: string) {
     await fetch(SERVER_URL, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'mcp-session-id': sessionId
       }
     });
 
     console.log('🗑️  Session cleaned up');
-
   } catch (error) {
     console.error('❌ Error:', error instanceof Error ? error.message : error);
   }
 }
 
-async function main() {
+async function main () {
   console.log('🏃 Starting Per-Bearer Token MCP Server Tests\n');
-  
+
   // Test each token
   for (const [token, description] of Object.entries(TOKENS)) {
     await testMcpEndpoint(token, description);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause between tests
+    await new Promise((resolve) => setTimeout(resolve, 500)); // Brief pause between tests
   }
 
   console.log('\n✨ All tests completed!\n');
 }
 
 // Test with invalid token
-async function testInvalidToken() {
+async function testInvalidToken () {
   console.log('\n🚫 Testing with invalid token');
   console.log('='.repeat(60));
 
@@ -173,7 +189,7 @@ async function testInvalidToken() {
     const response = await fetch(SERVER_URL, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer invalid-token',
+        Authorization: 'Bearer invalid-token',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

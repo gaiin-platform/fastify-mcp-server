@@ -4,7 +4,7 @@ import { z } from 'zod';
 /**
  * Creates a basic MCP server with simple math tools
  */
-export async function createBasicMathServer(): Promise<Server> {
+export async function createBasicMathServer (): Promise<Server> {
   const server = new Server(
     {
       name: 'basic-math-server',

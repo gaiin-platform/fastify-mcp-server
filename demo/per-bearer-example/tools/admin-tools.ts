@@ -4,7 +4,7 @@ import { z } from 'zod';
 /**
  * Creates an admin MCP server with system tools
  */
-export async function createAdminServer(): Promise<Server> {
+export async function createAdminServer (): Promise<Server> {
   const server = new Server(
     {
       name: 'admin-server',
