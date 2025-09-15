@@ -1,15 +1,25 @@
 {
-  "name": "fastify-mcp-server",
-  "description": "Easily spin up Model Context Protocol (MCP) servers using Fastify",
+  "name": "@majkapp/fastify-mcp-server",
   "version": "0.4.1",
+  "description": "A fork of fastify-mcp-server (Flavio Del Grosso / gaiin-platform) with additional features around per-bearer token server support.",
   "type": "module",
   "license": "ISC",
+  "author": "Jules White",
+  "contributors": [
+    { "name": "Flavio Del Grosso", "url": "https://github.com/flaviodelgrosso" },
+    { "name": "gaiin-platform", "url": "https://github.com/gaiin-platform" }
+  ],
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "exports": {
     ".": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">= 18.0.0"
@@ -21,12 +31,17 @@
     "streamable",
     "http",
     "modelcontextprotocol",
-    "server"
+    "server",
+    "bearer-token",
+    "multitenant"
   ],
-  "homepage": "https://github.com/flaviodelgrosso/fastify-mcp-server#readme",
+  "homepage": "https://github.com/gaiin-platform/fastify-mcp-server#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/flaviodelgrosso/fastify-mcp-server.git"
+    "url": "git+https://github.com/gaiin-platform/fastify-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gaiin-platform/fastify-mcp-server/issues"
   },
   "scripts": {
     "dev": "node --watch demo/server.ts",
