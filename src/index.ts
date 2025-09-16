@@ -7,7 +7,38 @@ import type { FastifyMcpServerOptions } from './types.ts';
 // Re-export the bearer token provider types
 export type { BearerTokenProvider } from './bearer-provider.ts';
 export { TokenBasedServerProvider } from './bearer-provider.ts';
-export type { FastifyMcpServerOptions } from './types.ts';
+
+// Export main configuration types
+export type { FastifyMcpServerOptions, AuthorizationOptions } from './types.ts';
+
+// Export the main server class for advanced users
+export { FastifyMcpServer } from './server.ts';
+
+// Export session manager for advanced users who need session control
+export { SessionManager } from './session-manager.ts';
+
+// Export per-bearer server functionality - the key new feature
+export {
+  createPerBearerMcpServer,
+  PerBearerMcpServer,
+  type PerBearerMcpServerOptions,
+  type ServerFactory,
+  type ServerWithMetadata,
+  type ServerInfo,
+  type SessionInfo,
+  type ToolCallInfo,
+  type ServerRegistrationInfo,
+  type ServerRemovalInfo,
+  type ServerUpdateInfo,
+  type PerBearerMcpServerEvents
+} from './per-bearer-mcp-server.ts';
+
+// Export error classes for error handling
+export {
+  InvalidRequestError,
+  SessionNotFoundError,
+  setMcpErrorHandler
+} from './errors.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
