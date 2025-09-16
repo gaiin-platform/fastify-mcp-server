@@ -1,6 +1,6 @@
 {
   "name": "@majkapp/fastify-mcp-server",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "A fork of fastify-mcp-server (Flavio Del Grosso / gaiin-platform) with additional features around per-bearer token server support.",
   "type": "module",
   "license": "ISC",
