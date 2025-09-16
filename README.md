@@ -9,44 +9,22 @@ A robust Fastify plugin that provides seamless integration with the Model Contex
 
 ## Table of Contents
 
-- [Fastify MCP Server Plugin](#fastify-mcp-server-plugin)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Features](#features)
-    - [Core Functionality](#core-functionality)
-    - [Advanced Features](#advanced-features)
-  - [Installation](#installation)
-  - [Quick Demo](#quick-demo)
-  - [Quick Start](#quick-start)
-  - [API Reference](#api-reference)
-    - [Plugin Options](#plugin-options)
-    - [MCP Decorator](#mcp-decorator)
-    - [Session Events](#session-events)
-  - [HTTP Protocol](#http-protocol)
-    - [POST `/mcp`](#post-mcp)
-    - [GET `/mcp`](#get-mcp)
-    - [DELETE `/mcp`](#delete-mcp)
-    - [Session Management](#session-management)
-  - [Advanced Usage](#advanced-usage)
-    - [Custom Error Handling](#custom-error-handling)
-    - [Health Monitoring](#health-monitoring)
-    - [Graceful Shutdown](#graceful-shutdown)
-  - [Authentication: Bearer Token Support](#authentication-bearer-token-support)
-    - [Enabling Bearer Token Authentication](#enabling-bearer-token-authentication)
-    - [How It Works](#how-it-works)
-      - [Example Tool with authentication information](#example-tool-with-authentication-information)
-      - [Example Error Response](#example-error-response)
-      - [Example using PAT in Visual Studio Code](#example-using-pat-in-visual-studio-code)
-  - [Well-Known OAuth Metadata Routes](#well-known-oauth-metadata-routes)
-    - [Registering Well-Known Routes](#registering-well-known-routes)
-    - [Endpoints](#endpoints)
-  - [Development](#development)
-    - [Setup](#setup)
-    - [Scripts](#scripts)
-    - [Testing](#testing)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Related Projects](#related-projects)
+- [🚀 Quick Start](#quick-start) - Get running in 30 seconds
+- [🆕 Per-Bearer Token Servers](#-per-bearer-token-mcp-servers) - Multi-tenant functionality  
+- [📊 Examples & Demos](#-examples--demos) - Production-ready patterns
+- [🔌 Client Configuration](#-client-configuration) - MCP client setup
+- [📚 API Reference](#api-reference) - Complete interface documentation
+- [🔐 Authentication](#authentication-bearer-token-support) - Security and OAuth
+- [🛠️ Development](#development) - Contributing and testing
+
+## 📊 Examples & Demos
+
+| Demo | Description | Command | Use Case |
+|------|-------------|---------|----------|
+| **Simple Server** | Basic multi-tenant setup | `npm run demo:simple` | Learning the basics |
+| **Per-Bearer Demo** | 3 token types with different tools | `npm run demo:per-bearer` | Production preview |
+| **Runtime Management** | Live token add/remove/update | `npm run demo:runtime-tokens` | SaaS operations |
+| **Complete Example** | Enterprise patterns | See `examples/per-bearer-token-complete.ts` | Advanced use cases |
 
 ## Overview
 
@@ -102,18 +80,55 @@ npm run dev
 npm run inspector
 ```
 
-### 🆕 Per-Bearer Token Demo
+### 🆕 Per-Bearer Token Demos
 ```bash
-# Start per-bearer token demo (3 different tokens with different tools)
+# Simple multi-tenant server (recommended first demo)
+npm run demo:simple
+
+# Full per-bearer token demo (3 different servers with comprehensive tools)
 npm run demo:per-bearer
 
-# Start runtime token management demo (add/remove tokens live)
+# Runtime token management demo (add/remove/update tokens live)
 npm run demo:runtime-tokens
 ```
 
-This will start a Fastify server with the MCP plugin enabled, allowing you to interact with it via the MCP inspector or any MCP-compatible client.
+This will start servers that demonstrate the full power of per-bearer token multi-tenancy!
 
 ## Quick Start
+
+### 🚀 Simple Multi-Tenant Server (Recommended)
+
+```typescript
+import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+// Create multi-tenant server with zero configuration
+const server = createPerBearerMcpServer({ port: 8080 })
+  .addToken('user-123', () => {
+    const mcp = new McpServer({ name: 'user-tools', version: '1.0.0' });
+    mcp.tool('hello', 'Say hello', {}, () => ({
+      content: [{ type: 'text', text: 'Hello from your personal MCP server!' }]
+    }));
+    return mcp.server;
+  })
+  .addToken('admin-456', () => {
+    const mcp = new McpServer({ name: 'admin-tools', version: '1.0.0' });
+    mcp.tool('system-info', 'Get system info', {}, () => ({
+      content: [{ type: 'text', text: \`Memory: \${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB\` }]
+    }));
+    return mcp.server;
+  });
+
+// Start and monitor
+const { url } = await server.start();
+console.log(\`🚀 Multi-tenant MCP server running at \${url}\`);
+
+// Each token gets completely different tools!
+// user-123 token → hello tool only
+// admin-456 token → system-info tool only
+```
+
+### 📡 Traditional Single Server
 
 ```typescript
 import Fastify from 'fastify';
@@ -129,7 +144,7 @@ const mcp = new McpServer({
 });
 
 // Define MCP tools
-mcp.tool('hello-world', () => ({
+mcp.tool('hello-world', 'Say hello', {}, () => ({
   content: [{ type: 'text', text: 'Hello from MCP!' }]
 }));
 
@@ -148,123 +163,549 @@ await app.listen({ host: '127.0.0.1', port: 3000 });
 
 ## 🆕 Per-Bearer Token MCP Servers
 
-This plugin now supports **per-bearer token MCP servers**, allowing different bearer tokens to access completely different sets of tools and capabilities. Perfect for multi-tenant SaaS applications!
+This plugin supports **per-bearer token MCP servers**, enabling complete multi-tenancy where different bearer tokens access isolated MCP server instances with their own tools, resources, and capabilities. Perfect for SaaS applications, customer-specific tooling, and role-based access control!
 
-### Quick Start with Per-Bearer Tokens
+### 🎯 Key Benefits
+
+- **🏢 Multi-Tenant Architecture**: Each token gets its own isolated MCP server
+- **🔄 Zero-Downtime Management**: Add/remove/update tokens without restart  
+- **📊 Rich Monitoring**: Comprehensive events and statistics
+- **⚡ High Performance**: Server caching and efficient resource management
+- **🛡️ Complete Isolation**: No cross-contamination between tokens
+- **🎛️ Simple API**: Intuitive interface for complex functionality
+
+---
+
+### 🚀 Quick Start Examples
+
+#### Simple Multi-Tenant Server
 
 ```typescript
-import { TokenBasedServerProvider } from 'fastify-mcp-server';
+import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-// Create different servers for different tokens
-const bearerTokenProvider = new TokenBasedServerProvider({
-  'basic-user-token': () => createBasicMathServer(),
-  'admin-token': () => createAdminServer(),
-  'premium-customer-token': () => createPremiumAnalyticsServer()
+// Create per-bearer token server with dynamic port
+const server = createPerBearerMcpServer({
+  port: 0,     // Auto-assign port
+  logging: true
 });
 
-await app.register(FastifyMcpServer, {
-  endpoint: '/mcp',
-  authorization: {
-    bearerTokenProvider,
-    bearerMiddlewareOptions: {
-      verifier: bearerTokenProvider  // Use same provider for verification
-    }
-  }
-});
+// Add different servers for different user types
+server
+  .addToken('math-user-123', () => {
+    const mcp = new McpServer({ name: 'math-tools', version: '1.0.0' });
+    mcp.tool('add', 'Add numbers', { 
+      a: { type: 'number' }, 
+      b: { type: 'number' } 
+    }, ({ a, b }) => ({ 
+      content: [{ type: 'text', text: `${a + b}` }] 
+    }));
+    return mcp.server;
+  })
+  .addToken('admin-user-456', () => {
+    const mcp = new McpServer({ name: 'admin-tools', version: '2.0.0' });
+    mcp.tool('system-info', 'Get system information', {}, () => ({
+      content: [{ type: 'text', text: JSON.stringify(process.memoryUsage(), null, 2) }]
+    }));
+    return mcp.server;
+  });
+
+// Start server and get assigned port
+const { port, url } = await server.start();
+console.log(`🚀 Multi-tenant MCP server running at ${url}`);
 ```
 
-### Simple Interface (Recommended)
+#### Enterprise SaaS Pattern
+
+```typescript
+class EnterpriseServicesAPI {
+  private mcpServer = createPerBearerMcpServer({ port: 9000 });
+  private customers = new Map();
+
+  constructor() {
+    // Set up comprehensive monitoring
+    this.setupMonitoring();
+  }
+
+  // Customer onboarding with custom tools
+  async onboardCustomer(customerId: string, companyName: string, plan: string) {
+    const token = `enterprise-${customerId}-${Date.now()}`;
+    
+    // Create customer-specific MCP server
+    this.mcpServer.addToken(token, () => this.createCustomerServer(companyName, plan));
+    
+    // Store customer info
+    this.customers.set(customerId, { token, companyName, plan, createdAt: new Date() });
+    
+    return {
+      token,
+      mcpEndpoint: `http://127.0.0.1:9000/mcp`,
+      capabilities: this.getPlanCapabilities(plan),
+      setupInstructions: this.generateSetupInstructions(token)
+    };
+  }
+
+  // Dynamic plan upgrades
+  async upgradeCustomer(customerId: string, newPlan: string) {
+    const customer = this.customers.get(customerId);
+    if (!customer) throw new Error('Customer not found');
+
+    // Update to new plan server (zero downtime)
+    this.mcpServer.updateToken(
+      customer.token, 
+      () => this.createCustomerServer(customer.companyName, newPlan)
+    );
+    
+    customer.plan = newPlan;
+    return { success: true, newCapabilities: this.getPlanCapabilities(newPlan) };
+  }
+
+  // Customer offboarding
+  async offboardCustomer(customerId: string) {
+    const customer = this.customers.get(customerId);
+    if (!customer) return false;
+
+    this.mcpServer.removeToken(customer.token);
+    this.customers.delete(customerId);
+    return true;
+  }
+
+  private createCustomerServer(companyName: string, plan: string) {
+    const mcp = new McpServer({ 
+      name: `${companyName}-tools`, 
+      version: '1.0.0' 
+    });
+
+    // Base tools for all plans
+    mcp.tool('company-info', 'Get company information', {}, () => ({
+      content: [{ type: 'text', text: `Company: ${companyName}\\nPlan: ${plan}` }]
+    }));
+
+    // Plan-specific tools
+    if (plan === 'premium' || plan === 'enterprise') {
+      mcp.tool('analytics', 'Advanced analytics', {
+        metric: { type: 'string' }
+      }, ({ metric }) => ({
+        content: [{ type: 'text', text: `Analytics for ${metric}: [Premium Data]` }]
+      }));
+    }
+
+    if (plan === 'enterprise') {
+      mcp.tool('admin-controls', 'Enterprise admin tools', {}, () => ({
+        content: [{ type: 'text', text: 'Enterprise admin dashboard accessible' }]
+      }));
+    }
+
+    return mcp.server;
+  }
+
+  private setupMonitoring() {
+    this.mcpServer.on('serverRegistered', ({ token, serverName, serverVersion }) => {
+      console.log(`📦 Registered: ${serverName} v${serverVersion} for token ${token}`);
+    });
+
+    this.mcpServer.on('sessionCreated', ({ sessionId, token }) => {
+      const customer = Array.from(this.customers.entries())
+        .find(([_, c]) => c.token === token)?.[1];
+      console.log(`👤 Session ${sessionId} started for ${customer?.companyName || 'unknown'}`);
+    });
+
+    this.mcpServer.on('toolCalled', ({ toolName, token, duration }) => {
+      console.log(`🔧 Tool "${toolName}" executed in ${duration}ms`);
+    });
+  }
+
+  // Get current system statistics
+  getSystemStats() {
+    return {
+      server: this.mcpServer.getStats(),
+      customers: {
+        total: this.customers.size,
+        byPlan: this.getCustomersByPlan()
+      }
+    };
+  }
+}
+
+// Usage
+const api = new EnterpriseServicesAPI();
+await api.mcpServer.start();
+
+// Onboard customers
+const acme = await api.onboardCustomer('acme-corp', 'ACME Corporation', 'enterprise');
+const startup = await api.onboardCustomer('startup-inc', 'Startup Inc', 'basic');
+```
+
+#### Real-Time Token Management
 
 ```typescript
 import { createPerBearerMcpServer } from 'fastify-mcp-server';
 
-const server = createPerBearerMcpServer({
-  port: 0,        // Dynamic port assignment
-  logging: true
-})
-.addToken('math-token', () => createMathServer())
-.addToken('admin-token', () => createAdminServer());
+const server = createPerBearerMcpServer({ port: 8080 });
 
-// Rich event system
-server.on('started', (info) => console.log(\`🚀 Server at \${info.url}\`));
-server.on('serverRegistered', (info) => 
-  console.log(\`📦 \${info.serverName} registered for \${info.token}\`));
-server.on('sessionCreated', (session) => 
-  console.log(\`👤 Session: \${session.sessionId}\`));
+// Start with empty server
+await server.start();
+console.log('🟢 Server running, ready for dynamic tokens');
 
-const { port } = await server.start();
-console.log(\`Started on dynamic port: \${port}\`);
+// Simulate real-time customer operations
+setInterval(() => {
+  const customerId = `customer-${Date.now()}`;
+  const token = `token-${customerId}`;
+  
+  console.log(`➕ Adding customer: ${customerId}`);
+  server.addToken(token, () => {
+    const mcp = new McpServer({ name: `${customerId}-server`, version: '1.0.0' });
+    mcp.tool('hello', 'Say hello', {}, () => ({
+      content: [{ type: 'text', text: `Hello from ${customerId}!` }]
+    }));
+    return mcp.server;
+  });
+
+  // Remove after 30 seconds (simulate customer lifecycle)
+  setTimeout(() => {
+    console.log(`➖ Removing customer: ${customerId}`);
+    server.removeToken(token);
+  }, 30000);
+  
+}, 5000); // Add new customer every 5 seconds
+
+// Monitor activity
+server.on('tokenAdded', (token) => console.log(`🔑 Token added: ${token}`));
+server.on('tokenRemoved', (token) => console.log(`🗑️  Token removed: ${token}`));
 ```
 
-### Runtime Token Management
+---
+
+### 🛠️ Advanced Usage Patterns
+
+#### Role-Based Access Control
 
 ```typescript
-// Add tokens at runtime (zero downtime)
-server.addToken('new-customer-token', () => createCustomerServer());
+enum UserRole {
+  VIEWER = 'viewer',
+  EDITOR = 'editor', 
+  ADMIN = 'admin'
+}
 
-// Remove expired tokens
-server.removeToken('expired-token');
-
-// Update existing tokens (plan upgrades)
-server.updateToken('customer-token', () => createPremiumServer());
-
-// Monitor status
-console.log('Active tokens:', server.getTokens());
-console.log('Stats:', server.getStats());
-```
-
-### Multi-Tenant SaaS Pattern
-
-```typescript
-class CustomerMcpService {
-  private mcp = createPerBearerMcpServer({ port: 9090 });
-
-  async addCustomer(customerId, name, plan) {
-    const token = \`customer-\${customerId}-token\`;
-    this.mcp.addToken(token, () => this.createCustomerServer(name, plan));
-    return { token, features: this.getPlanFeatures(plan) };
-  }
-
-  removeCustomer(customerId) {
-    this.mcp.removeToken(\`customer-\${customerId}-token\`);
-  }
-
-  upgradeCustomer(customerId, newPlan) {
-    const token = \`customer-\${customerId}-token\`;
-    this.mcp.updateToken(token, () => this.createCustomerServer(name, newPlan));
+class RoleBasedMcpService {
+  private server = createPerBearerMcpServer({ port: 9001 });
+  
+  async createUserToken(userId: string, role: UserRole) {
+    const token = `user-${userId}-${role}`;
+    
+    this.server.addToken(token, () => {
+      const mcp = new McpServer({ name: `${role}-tools`, version: '1.0.0' });
+      
+      // Tools available to all users
+      mcp.tool('read-data', 'Read data', { id: { type: 'string' } }, 
+        ({ id }) => ({ content: [{ type: 'text', text: `Data for ${id}` }] }));
+      
+      // Editor and admin tools
+      if (role === UserRole.EDITOR || role === UserRole.ADMIN) {
+        mcp.tool('write-data', 'Write data', { 
+          id: { type: 'string' }, 
+          content: { type: 'string' } 
+        }, ({ id, content }) => ({ 
+          content: [{ type: 'text', text: `Saved ${content} to ${id}` }] 
+        }));
+      }
+      
+      // Admin-only tools
+      if (role === UserRole.ADMIN) {
+        mcp.tool('delete-data', 'Delete data', { id: { type: 'string' } },
+          ({ id }) => ({ content: [{ type: 'text', text: `Deleted ${id}` }] }));
+        mcp.tool('manage-users', 'Manage users', {},
+          () => ({ content: [{ type: 'text', text: 'User management interface' }] }));
+      }
+      
+      return mcp.server;
+    });
+    
+    return token;
   }
 }
 ```
 
-### MCP Client Configuration
+#### Geographic Server Distribution  
 
-Each bearer token connects to the same URL but gets different tools:
+```typescript
+class GeoDistributedMcpService {
+  private servers = new Map();
+  
+  async createRegionalServer(region: 'us-east', 'us-west', 'eu', 'asia') {
+    const server = createPerBearerMcpServer({ 
+      port: this.getRegionalPort(region),
+      logging: true 
+    });
+    
+    // Add region-specific tools and data
+    server.addToken('regional-access', () => {
+      const mcp = new McpServer({ name: `${region}-services`, version: '1.0.0' });
+      
+      mcp.tool('local-time', 'Get local time', {}, () => ({
+        content: [{ type: 'text', text: new Date().toLocaleString('en-US', { 
+          timeZone: this.getTimezone(region) 
+        })}]
+      }));
+      
+      mcp.tool('regional-data', 'Get regional data', {}, () => ({
+        content: [{ type: 'text', text: `Data from ${region} datacenter` }]
+      }));
+      
+      return mcp.server;
+    });
+    
+    await server.start();
+    this.servers.set(region, server);
+    return server;
+  }
+}
+```
+
+---
+
+### 📊 Monitoring & Events
+
+The per-bearer token interface provides comprehensive event monitoring:
+
+```typescript
+const server = createPerBearerMcpServer();
+
+// Server lifecycle events
+server.on('started', (info) => {
+  console.log(`🚀 Server started at ${info.url} (port ${info.port})`);
+  console.log(`📋 Process ID: ${process.pid}`);
+});
+
+server.on('stopped', () => {
+  console.log('🔴 Server stopped gracefully');
+});
+
+// Token management events  
+server.on('tokenAdded', (token) => {
+  console.log(`➕ New token registered: ${token}`);
+  console.log(`📊 Total tokens: ${server.getStats().registeredTokens}`);
+});
+
+server.on('tokenRemoved', (token) => {
+  console.log(`➖ Token removed: ${token}`);
+});
+
+server.on('tokenUpdated', (token) => {
+  console.log(`🔄 Token updated: ${token}`);
+});
+
+// Server registration events (detailed tracking)
+server.on('serverRegistered', ({ token, serverName, serverVersion, registeredAt }) => {
+  console.log(`📦 Server registered:`, {
+    name: serverName,
+    version: serverVersion,
+    token: token.substring(0, 8) + '...',
+    timestamp: registeredAt.toISOString()
+  });
+});
+
+server.on('serverRemoved', ({ token, serverName, hadActiveSessions, removedAt }) => {
+  console.log(`🗑️  Server removed: ${serverName}`, {
+    hadActiveSessions,
+    removedAt: removedAt.toISOString()
+  });
+});
+
+// Session activity monitoring
+server.on('sessionCreated', ({ sessionId, token, createdAt }) => {
+  console.log(`👤 New session: ${sessionId.substring(0, 8)}... for token ${token.substring(0, 8)}...`);
+});
+
+server.on('sessionEnded', ({ sessionId, duration }) => {
+  console.log(`👋 Session ended: ${sessionId.substring(0, 8)}... (${duration}ms)`);
+});
+
+// Tool usage analytics
+server.on('toolCalled', ({ toolName, token, sessionId, duration, success }) => {
+  console.log(`🔧 Tool executed:`, {
+    tool: toolName,
+    token: token.substring(0, 8) + '...',
+    duration: `${duration}ms`,
+    status: success ? '✅' : '❌'
+  });
+});
+```
+
+### 🔧 Production Deployment
+
+```typescript
+import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import closeWithGrace from 'close-with-grace';
+
+class ProductionMcpService {
+  private server: PerBearerMcpServer;
+  
+  async initialize() {
+    this.server = createPerBearerMcpServer({
+      port: process.env.MCP_PORT || 8080,
+      logging: process.env.NODE_ENV !== 'production'
+    });
+    
+    // Set up production monitoring
+    this.setupHealthChecks();
+    this.setupMetrics();
+    this.setupGracefulShutdown();
+    
+    await this.server.start();
+    return this.server.getServerInfo();
+  }
+  
+  private setupHealthChecks() {
+    setInterval(() => {
+      const stats = this.server.getStats();
+      
+      // Alert on high session count
+      if (stats.activeSessions > 1000) {
+        console.warn('⚠️  High session count:', stats.activeSessions);
+      }
+      
+      // Alert on token limit
+      if (stats.registeredTokens > 10000) {
+        console.warn('⚠️  High token count:', stats.registeredTokens);
+      }
+      
+      // Memory monitoring
+      const memory = process.memoryUsage();
+      if (memory.heapUsed > 500 * 1024 * 1024) { // 500MB
+        console.warn('⚠️  High memory usage:', Math.round(memory.heapUsed / 1024 / 1024) + 'MB');
+      }
+    }, 30000);
+  }
+  
+  private setupGracefulShutdown() {
+    closeWithGrace({ delay: 5000 }, async ({ signal, err }) => {
+      if (err) {
+        console.error('🚨 Server closing with error:', err);
+      } else {
+        console.log(`📡 ${signal} received, shutting down gracefully...`);
+      }
+      
+      const stats = this.server.getStats();
+      console.log(`📊 Final stats: ${stats.activeSessions} sessions, ${stats.registeredTokens} tokens`);
+      
+      await this.server.stop();
+      console.log('✅ Shutdown complete');
+    });
+  }
+}
+
+// Start production service
+const service = new ProductionMcpService();
+service.initialize().then(info => {
+  console.log('🎯 Production MCP service ready:', info);
+});
+```
+
+---
+
+### 🔌 Client Configuration
+
+Each bearer token connects to the same MCP endpoint but receives completely different tools and capabilities:
+
+#### MCP Client Settings (VS Code/Claude Desktop)
 
 ```json
 {
   "mcpServers": {
-    "basic-math": {
+    "math-service": {
       "type": "http",
-      "url": "http://127.0.0.1:9081/mcp",
+      "url": "http://127.0.0.1:8080/mcp",
       "headers": {
-        "Authorization": "Bearer basic-user-token"
+        "Authorization": "Bearer math-user-123"
       }
     },
-    "admin-tools": {
-      "type": "http",
-      "url": "http://127.0.0.1:9081/mcp",
+    "admin-service": {
+      "type": "http", 
+      "url": "http://127.0.0.1:8080/mcp",
       "headers": {
-        "Authorization": "Bearer admin-token"
+        "Authorization": "Bearer admin-user-456"
+      }
+    },
+    "customer-acme": {
+      "type": "http",
+      "url": "http://127.0.0.1:8080/mcp", 
+      "headers": {
+        "Authorization": "Bearer enterprise-acme-corp-1234567890"
       }
     }
   }
 }
 ```
+
+#### Using Environment Variables for Security
+
+```json
+{
+  "mcpServers": {
+    "my-service": {
+      "type": "http",
+      "url": "https://your-domain.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${MCP_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Set the environment variable:
+```bash
+export MCP_TOKEN="your-secure-bearer-token-here"
+```
+
+#### Dynamic Client Configuration
+
+```typescript
+// Generate client config for customer onboarding
+function generateMcpClientConfig(customerToken: string, serverUrl: string) {
+  return {
+    mcpServers: {
+      [`customer-${Date.now()}`]: {
+        type: "http",
+        url: `${serverUrl}/mcp`,
+        headers: {
+          Authorization: `Bearer ${customerToken}`
+        }
+      }
+    }
+  };
+}
+
+// Usage in your onboarding API
+app.post('/api/customers/:id/mcp-config', async (req, res) => {
+  const { id } = req.params;
+  const customer = await database.getCustomer(id);
+  
+  const config = generateMcpClientConfig(
+    customer.mcpToken,
+    process.env.MCP_SERVER_URL
+  );
+  
+  res.json({
+    message: 'MCP configuration ready',
+    config,
+    setupInstructions: [
+      '1. Copy the configuration below',
+      '2. Add it to your MCP client settings',
+      '3. Restart your client to connect'
+    ]
+  });
+});
+```
+
+---
 
 ## API Reference
 
 ### Plugin Options
 
+#### Standard MCP Server Options
 ```typescript
 type FastifyMcpServerOptions = {
   server: Server;      // MCP Server instance from @modelcontextprotocol/sdk
@@ -275,11 +716,76 @@ type FastifyMcpServerOptions = {
       requiredScopes?: string[]; // Optional scopes required for access
       resourceMetadataUrl?: string; // Optional URL for resource metadata
     };
+    bearerTokenProvider?: BearerTokenProvider; // Per-bearer token provider
     oauth2?: {         // OAuth2 metadata configuration
-      authorizationServerOAuthMetadata: OAuthMetadata; // OAuth metadata for authorization server
-      protectedResourceOAuthMetadata: OAuthProtectedResourceMetadata; // OAuth metadata for protected resource
+      authorizationServerOAuthMetadata: OAuthMetadata;
+      protectedResourceOAuthMetadata: OAuthProtectedResourceMetadata;
     };
   };
+}
+```
+
+#### 🆕 Per-Bearer Token Server Options  
+```typescript
+type PerBearerMcpServerOptions = {
+  port?: number;       // Port number (0 for dynamic assignment)
+  host?: string;       // Host to bind to (default: '127.0.0.1') 
+  logging?: boolean;   // Enable request logging (default: false)
+  endpoint?: string;   // MCP endpoint path (default: '/mcp')
+}
+
+// Create per-bearer server
+function createPerBearerMcpServer(options?: PerBearerMcpServerOptions): PerBearerMcpServer;
+```
+
+#### Per-Bearer Token Server Interface
+```typescript
+interface PerBearerMcpServer extends EventEmitter {
+  // Token management
+  addToken(token: string, serverFactory: ServerFactory): this;
+  removeToken(token: string): this;
+  updateToken(token: string, serverFactory: ServerFactory): this;
+  
+  // Server lifecycle
+  start(): Promise<ServerInfo>;
+  stop(): Promise<void>;
+  
+  // Status and monitoring  
+  isRunning(): boolean;
+  getStats(): ServerStats;
+  getTokens(): string[];
+  hasToken(token: string): boolean;
+  getServerInfo(): ServerInfo | null;
+  
+  // Event emitter for comprehensive monitoring
+  on(event: 'started', listener: (info: ServerInfo) => void): this;
+  on(event: 'stopped', listener: () => void): this;
+  on(event: 'tokenAdded', listener: (token: string) => void): this;
+  on(event: 'tokenRemoved', listener: (token: string) => void): this;
+  on(event: 'tokenUpdated', listener: (token: string) => void): this;
+  on(event: 'serverRegistered', listener: (info: ServerRegisteredEvent) => void): this;
+  on(event: 'serverRemoved', listener: (info: ServerRemovedEvent) => void): this;
+  on(event: 'serverUpdated', listener: (info: ServerUpdatedEvent) => void): this;
+  on(event: 'sessionCreated', listener: (session: SessionEvent) => void): this;
+  on(event: 'sessionEnded', listener: (session: SessionEvent) => void): this;
+  on(event: 'toolCalled', listener: (call: ToolCallEvent) => void): this;
+}
+
+type ServerFactory = () => Promise<Server> | Server;
+
+type ServerInfo = {
+  port: number;
+  url: string;
+  host: string; 
+  endpoint: string;
+  startedAt: Date;
+}
+
+type ServerStats = {
+  registeredTokens: number;
+  activeServers: number;
+  activeSessions: number;
+  uptime: number;
 }
 ```
 
@@ -324,42 +830,32 @@ sessionManager.on('transportError', (sessionId: string, error: Error) => {
 });
 ```
 
-### 🆕 Per-Bearer Token Events
+### 🆕 Token Provider Interface
 
-The new per-bearer token interface provides rich event monitoring:
+For advanced use cases, you can use the `TokenBasedServerProvider` directly:
 
 ```typescript
-const server = createPerBearerMcpServer();
+import { TokenBasedServerProvider } from 'fastify-mcp-server';
 
-// Server lifecycle events
-server.on('started', (info) => console.log(`🚀 Started at ${info.url}`));
-server.on('stopped', () => console.log('🔴 Stopped'));
-
-// Token management events
-server.on('tokenAdded', (token) => console.log(`➕ Token: ${token}`));
-server.on('tokenRemoved', (token) => console.log(`➖ Token: ${token}`));
-server.on('tokenUpdated', (token) => console.log(`🔄 Token: ${token}`));
-
-// Server registration events (detailed tracking)
-server.on('serverRegistered', (info) => {
-  console.log(`📦 ${info.serverName} v${info.serverVersion} registered for ${info.token}`);
+const provider = new TokenBasedServerProvider({
+  'token1': () => createServer1(),
+  'token2': () => createServer2()
 });
 
-server.on('serverRemoved', (info) => {
-  console.log(`🗑️ ${info.serverName} removed (had sessions: ${info.hadActiveSessions})`);
-});
+// Runtime token management
+provider.addToken('token3', () => createServer3());
+provider.removeToken('token1');
+provider.updateToken('token2', () => createNewServer2());
 
-server.on('serverUpdated', (info) => {
-  console.log(`🔄 Server updated: ${info.oldServerName} → ${info.newServerName}`);
-});
-
-// Session and activity events
-server.on('sessionCreated', (session) => {
-  console.log(`👤 Session ${session.sessionId} for ${session.token}`);
-});
-
-server.on('toolCalled', (call) => {
-  console.log(`🔧 Tool ${call.toolName} called by ${call.token}`);
+// Use with standard Fastify plugin
+await app.register(FastifyMcpServer, {
+  endpoint: '/mcp',
+  authorization: {
+    bearerTokenProvider: provider,
+    bearerMiddlewareOptions: {
+      verifier: provider
+    }
+  }
 });
 ```
 
@@ -598,13 +1094,21 @@ npm run dev
 
 ### Scripts
 
+**Development:**
 - `npm run dev` - Run development server with hot reload
-- `npm run demo:per-bearer` - Run per-bearer token demo with 3 different tokens
-- `npm run demo:runtime-tokens` - Run runtime token management demo
 - `npm run build` - Build TypeScript to JavaScript
 - `npm test` - Run test suite with 100% coverage
 - `npm run test:lcov` - Generate LCOV coverage report
-- `npm run release` - Create a new release
+
+**Per-Bearer Token Demos:**
+- `npm run demo:simple` - Simple multi-tenant server (great for beginners)
+- `npm run demo:per-bearer` - Comprehensive demo with 3 different token types
+- `npm run demo:runtime-tokens` - Live token management (add/remove/update)
+
+**Utilities:**
+- `npm run inspector` - Open MCP inspector for testing
+- `npm run lint` - Run code linting
+- `npm run clean` - Clean build artifacts
 
 ### Testing
 

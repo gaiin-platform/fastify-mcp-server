@@ -24,14 +24,14 @@ async function basicExample () {
       mcpServer.tool('add', 'Add numbers', {
         a: { type: 'number' }, b: { type: 'number' }
       }, ({ a, b }) => ({ content: [{ type: 'text', text: `${a + b}` }] }));
-      return mcpServer;
+      return mcpServer.server;
     })
     .addToken('time-token', () => {
       const mcpServer = new McpServer({ name: 'time-server', version: '1.0.0' });
       mcpServer.tool('now', 'Get current time', {}, () => ({
         content: [{ type: 'text', text: new Date().toISOString() }]
       }));
-      return mcpServer;
+      return mcpServer.server;
     });
 
   // Listen for events - both token and server events

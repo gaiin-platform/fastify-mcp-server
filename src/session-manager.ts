@@ -60,7 +60,7 @@ export class SessionManager extends EventEmitter<SessionsEvents> {
       }
     });
 
-    // Handle transport closure | TODO: sdk seems to not handle this case
+    // Handle transport closure - cleanup session when transport closes
     /* c8 ignore next 4 */
     transport.onclose = () => {
       if (transport.sessionId) {

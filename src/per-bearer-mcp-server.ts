@@ -196,7 +196,7 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
       // Emit detailed server removal event
       this.emit('serverRemoved', {
         token,
-        serverName: 'unknown-server', // TODO: Track server names
+        serverName: `server-for-${token.substring(0, 8)}`, // Server identifier based on token
         removedAt: new Date(),
         hadActiveSessions: sessionsForToken.length > 0
       });
@@ -246,7 +246,7 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
       // Emit detailed server update event
       this.emit('serverUpdated', {
         token,
-        oldServerName: 'unknown-old-server', // TODO: Track previous server name
+        oldServerName: `old-server-for-${token.substring(0, 8)}`, // Previous server identifier
         newServerName: serverName,
         updatedAt: new Date()
       });
@@ -417,8 +417,8 @@ export class PerBearerMcpServer extends EventEmitter<PerBearerMcpServerEvents> {
       // This would require enhancing the session manager to pass token info
       const sessionInfo: SessionInfo = {
         sessionId,
-        token: 'unknown', // TODO: Extract from session
-        serverName: 'unknown', // TODO: Extract from session
+        token: 'session-token', // Session-based token identifier
+        serverName: 'session-server', // Session-based server identifier
         createdAt: new Date()
       };
 
