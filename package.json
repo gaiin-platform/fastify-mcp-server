@@ -47,6 +47,7 @@
     "dev": "node --watch demo/server.ts",
     "demo:per-bearer": "node demo/working-per-bearer-demo.js",
     "demo:runtime-tokens": "node demo/runtime-token-management-demo.js",
+    "demo:simple": "node demo/simple-server-demo.js",
     "demo:test-client": "tsx demo/per-bearer-example/test-client.ts",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",

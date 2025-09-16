@@ -37,14 +37,14 @@ server
       { a: { type: 'number' }, b: { type: 'number' } }, 
       ({ a, b }) => ({ content: [{ type: 'text', text: \`\${a + b}\` }] })
     );
-    return mcpServer;
+    return mcpServer.server;
   })
   .addToken('time-token', () => {
     const mcpServer = new McpServer({ name: 'time', version: '1.0.0' });
     mcpServer.tool('now', 'Current time', {}, 
       () => ({ content: [{ type: 'text', text: new Date().toISOString() }] })
     );
-    return mcpServer;
+    return mcpServer.server;
   });
 
 // Event handling
