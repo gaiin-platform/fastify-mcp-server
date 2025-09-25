@@ -2,10 +2,10 @@
 
 A robust Fastify plugin that provides seamless integration with the Model Context Protocol (MCP) through streamable HTTP transport. This plugin enables your Fastify applications to act as MCP servers, allowing AI assistants and other clients to interact with your services using the standardized MCP protocol.
 
-[![NPM version](https://img.shields.io/npm/v/fastify-mcp-server.svg?style=flat)](https://www.npmjs.com/package/fastify-mcp-server)
-[![NPM downloads](https://img.shields.io/npm/dm/fastify-mcp-server.svg?style=flat)](https://www.npmjs.com/package/fastify-mcp-server)
-[![CI](https://github.com/flaviodelgrosso/fastify-mcp-server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/flaviodelgrosso/fastify-mcp-server/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/flaviodelgrosso/fastify-mcp-server/graph/badge.svg?token=4ZGUR6VXTJ)](https://codecov.io/gh/flaviodelgrosso/fastify-mcp-server)
+[![NPM version](https://img.shields.io/npm/v/@majkapp/fastify-mcp-server.svg?style=flat)](https://www.npmjs.com/package/@majkapp/fastify-mcp-server)
+[![NPM downloads](https://img.shields.io/npm/dm/@majkapp/fastify-mcp-server.svg?style=flat)](https://www.npmjs.com/package/@majkapp/fastify-mcp-server)
+[![CI](https://github.com/gaiin-platform/fastify-mcp-server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/gaiin-platform/fastify-mcp-server/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gaiin-platform/@majkapp/fastify-mcp-server/graph/badge.svg?token=4ZGUR6VXTJ)](https://codecov.io/gh/gaiin-platform/@majkapp/fastify-mcp-server)
 
 ## Table of Contents
 
@@ -67,7 +67,7 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 ## Installation
 
 ```bash
-npm install fastify-mcp-server @modelcontextprotocol/sdk
+npm install @majkapp/fastify-mcp-server @modelcontextprotocol/sdk
 ```
 
 ## Quick Demo
@@ -99,7 +99,7 @@ This will start servers that demonstrate the full power of per-bearer token mult
 ### 🚀 Simple Multi-Tenant Server (Recommended)
 
 ```typescript
-import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import { createPerBearerMcpServer } from '@majkapp/fastify-mcp-server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Create multi-tenant server with zero configuration
@@ -133,7 +133,7 @@ console.log(\`🚀 Multi-tenant MCP server running at \${url}\`);
 ```typescript
 import Fastify from 'fastify';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import FastifyMcpServer, { getMcpDecorator } from 'fastify-mcp-server';
+import FastifyMcpServer, { getMcpDecorator } from '@majkapp/fastify-mcp-server';
 
 const app = Fastify({ logger: true });
 
@@ -181,7 +181,7 @@ This plugin supports **per-bearer token MCP servers**, enabling complete multi-t
 #### Simple Multi-Tenant Server
 
 ```typescript
-import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import { createPerBearerMcpServer } from '@majkapp/fastify-mcp-server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Create per-bearer token server with dynamic port
@@ -339,7 +339,7 @@ const startup = await api.onboardCustomer('startup-inc', 'Startup Inc', 'basic')
 #### Real-Time Token Management
 
 ```typescript
-import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import { createPerBearerMcpServer } from '@majkapp/fastify-mcp-server';
 
 const server = createPerBearerMcpServer({ port: 8080 });
 
@@ -535,7 +535,7 @@ server.on('toolCalled', ({ toolName, token, sessionId, duration, success }) => {
 ### 🔧 Production Deployment
 
 ```typescript
-import { createPerBearerMcpServer } from 'fastify-mcp-server';
+import { createPerBearerMcpServer } from '@majkapp/fastify-mcp-server';
 import closeWithGrace from 'close-with-grace';
 
 class ProductionMcpService {
@@ -835,7 +835,7 @@ sessionManager.on('transportError', (sessionId: string, error: Error) => {
 For advanced use cases, you can use the `TokenBasedServerProvider` directly:
 
 ```typescript
-import { TokenBasedServerProvider } from 'fastify-mcp-server';
+import { TokenBasedServerProvider } from '@majkapp/fastify-mcp-server';
 
 const provider = new TokenBasedServerProvider({
   'token1': () => createServer1(),
@@ -1039,7 +1039,7 @@ To enable these endpoints, provide the `authorization.oauth2.authorizationServer
 
 ```typescript
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import FastifyMcpServer from 'fastify-mcp-server';
+import FastifyMcpServer from '@majkapp/fastify-mcp-server';
 
 const mcp = new McpServer({
   name: 'my-mcp-server',
@@ -1082,7 +1082,7 @@ These endpoints are registered only if the corresponding metadata options are pr
 
 ```bash
 # Clone the repository
-git clone https://github.com/flaviodelgrosso/fastify-mcp-server.git
+git clone https://github.com/gaiin-platform/fastify-mcp-server.git
 cd fastify-mcp-server
 
 # Install dependencies
@@ -1151,7 +1151,8 @@ Contributions are welcome! Please read our contributing guidelines and ensure:
 
 ## License
 
-ISC © [Flavio Del Grosso](https://github.com/flaviodelgrosso)
+- ISC © [gaiin-platform](https://github.com/gaiin-platform)
+- ISC © [Flavio Del Grosso](https://github.com/flaviodelgrosso)
 
 ## Related Projects
 
