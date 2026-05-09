@@ -106,6 +106,14 @@ export class SessionManager extends EventEmitter<SessionsEvents> {
       return false;
     }
 
+    // Remove from map FIRST to prevent re-entrant calls caused by
+    // @modelcontextprotocol/sdk >= 1.25.0, where StreamableHTTPServerTransport
+    // became a wrapper around WebStandardStreamableHTTPServerTransport.
+    // Calling server.close() now triggers onclose via the delegate, which
+    // would call destroySession again before the session was removed,
+    // causing infinite recursion / stack overflow.
+    this.sessions.delete(sessionId);
+
     // Close the server connection if it's not the default server
     if (sessionInfo.server !== this.defaultServer) {
       try {
@@ -116,11 +124,8 @@ export class SessionManager extends EventEmitter<SessionsEvents> {
       }
     }
 
-    const deleted = this.sessions.delete(sessionId);
-    if (deleted) {
-      this.emit('sessionDestroyed', sessionId);
-    }
-    return deleted;
+    this.emit('sessionDestroyed', sessionId);
+    return true;
   }
 
   /**
