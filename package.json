@@ -1,13 +1,19 @@
 {
   "name": "@majkapp/fastify-mcp-server",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "A fork of fastify-mcp-server (Flavio Del Grosso / gaiin-platform) with additional features around per-bearer token server support.",
   "type": "module",
   "license": "ISC",
   "author": "Jules White",
   "contributors": [
-    { "name": "Flavio Del Grosso", "url": "https://github.com/flaviodelgrosso" },
-    { "name": "gaiin-platform", "url": "https://github.com/gaiin-platform" }
+    {
+      "name": "Flavio Del Grosso",
+      "url": "https://github.com/flaviodelgrosso"
+    },
+    {
+      "name": "gaiin-platform",
+      "url": "https://github.com/gaiin-platform"
+    }
   ],
   "main": "dist/index.js",
   "files": [
