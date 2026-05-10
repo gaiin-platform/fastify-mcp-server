@@ -58,7 +58,7 @@
     "demo:test-client": "tsx demo/per-bearer-example/test-client.ts",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "test": "node --test test/**/*.test.ts",
     "test:lcov": "c8 --100 --reporter=lcov node --test test/**/*.test.ts",
     "lint": "eslint",
